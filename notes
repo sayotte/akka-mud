@@ -1,0 +1,21 @@
+The objective is to play with Akka for concurrency and scale.
+
+The project is a MUD with many monsters running around.
+To remove the need for a novel/awkward HCI, collision detection, graphics and so on it will use a CircleMUD-style "rooms and zones" topology. For further simplicity, the topology will always be arrayed in a 2D-grid (a third dimension can be added if this ends up being fun, with the only changes being to pathfinding). Interactions will be limited to the same "room".
+
+1- create a supervision tree with N do-nothing children, sleep(3), kill rand(1, N-1) children and observe restarts
+    how do we specify restart strategies?
+    can we / how do we recover state when restarting?
+    how do we kill children?
+    how do we report crashes?
+
+2- create a Router for each child, have all children subscribe to one another, emit a message every rand(1, 10) seconds, react to messages amusingly (children are now mobile entities)
+    how do we create dynamic subscriptions?
+
+3- create a separate "zone" supervision tree, with one "room", which contains a list of mobile entities (all the existing ones); all entities in the "room" should also know which "room" they are in
+    how do we track a reference to something which might die, and obtain a new reference to its replacement?
+        goes for the room tracking mobiles, and for mobiles tracking their rooms
+
+4- create a second "room", and program mobiles to occasionally move from one room to the other by updating their membership in both rooms
+    this operation cannot be atomic, can it?
+        perhaps enter the other room before leaving the first one... that makes sense, actually
