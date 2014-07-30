@@ -10,6 +10,7 @@ import java.io.Serializable;
 // import java.util.ArrayList;
 
 import scala.collection.Iterator;
+import scala.collection.JavaConversions;
 
 public class AkkaMud
 {
@@ -41,11 +42,12 @@ public class AkkaMud
 //             });
 //         }
 
-        public void onReceive(Object message)
+        public void onReceive(Object message) throws Exception
         {
             if(message instanceof AnnounceYourself)
             {
                 System.out.println("Mobile entity '" + this.self().path().name() + "' here!");
+                throw new Exception();
             }
             else
                 unhandled(message);
@@ -64,22 +66,11 @@ public class AkkaMud
                 for(i = 0; i < 10; i++)
                 {
                     this.getContext().actorOf(Props.create(MobileEntity.class),
-                                              "child" + Integer.toString(i));
+                                              "mobile" + Integer.toString(i));
                 }
-                
-//                 if(this.getContext().children() instanceof Iterable)
-//                 {
-//                     System.out.println("children() appears to be an Iterable");
-//                 } else {
-//                     System.out.println("children() is *not* an Iterable!");
-//                     System.out.println("children() appears to be an: " +       this.getContext().children().getClass());
-//                 }
 
-//                 for(ActorRef child: this.getContext().children())
-                scala.collection.Iterator<ActorRef> it = this.getContext().children().iterator();
-                while(it.hasNext())
+                for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
                 {
-                    ActorRef child = it.next();
                     child.tell(new AnnounceYourself(), this.self());
                 }
             }
