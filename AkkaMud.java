@@ -15,7 +15,10 @@ import scala.collection.JavaConversions;
 public class AkkaMud
 {
     public static class StartChildren implements Serializable{}
+    public static class ReportChildren implements Serializable{}
+    public static class RestartChildren implements Serializable{}
     public static class AnnounceYourself implements Serializable{}
+    public static class RestartYourself implements Serializable{}
 
     public static class MobileEntity extends UntypedActor
     {
@@ -47,6 +50,9 @@ public class AkkaMud
             if(message instanceof AnnounceYourself)
             {
                 System.out.println("Mobile entity '" + this.self().path().name() + "' here!");
+            }
+            else if(message instanceof RestartYourself)
+            {
                 throw new Exception();
             }
             else
@@ -68,10 +74,19 @@ public class AkkaMud
                     this.getContext().actorOf(Props.create(MobileEntity.class),
                                               "mobile" + Integer.toString(i));
                 }
-
+            }
+            else if(message instanceof ReportChildren)
+            {
                 for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
                 {
                     child.tell(new AnnounceYourself(), this.self());
+                }
+            }
+            else if(message instanceof RestartChildren)
+            {
+                for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
+                {
+                    child.tell(new RestartYourself(), this.self());
                 }
             }
             else
@@ -87,6 +102,9 @@ public class AkkaMud
                                                   "mobile-supervisor");
 
         mobileSup.tell(new StartChildren(), null);
+        mobileSup.tell(new ReportChildren(), null);
+        mobileSup.tell(new RestartChildren(), null);
+        mobileSup.tell(new ReportChildren(), null);
 
         return;
     }
