@@ -9,8 +9,18 @@ import java.io.Serializable;
 // import java.util.List;
 // import java.util.ArrayList;
 
+import akka.japi.Function; // new Function<T, R>() { func_declaration_here }
+import akka.actor.SupervisorStrategy;
+import static akka.actor.SupervisorStrategy.resume;
+import static akka.actor.SupervisorStrategy.restart;
+import static akka.actor.SupervisorStrategy.stop;
+import static akka.actor.SupervisorStrategy.escalate;
+import akka.actor.SupervisorStrategy.Directive;
+import akka.actor.OneForOneStrategy;
+
 import scala.collection.Iterator;
 import scala.collection.JavaConversions;
+import scala.concurrent.duration.Duration;
 
 public class AkkaMud
 {
@@ -62,6 +72,31 @@ public class AkkaMud
 
     public static class MobileSupervisor extends UntypedActor
     {
+        private static Function<Throwable, Directive> decider = 
+            new Function<Throwable, Directive>()
+            {
+                @Override
+                public Directive apply(Throwable t)
+                {
+                    if(t instanceof java.lang.Exception)
+                    {
+                        return resume();
+                    }
+                    return escalate();
+                }
+            };
+
+        private static SupervisorStrategy strategy = 
+            new OneForOneStrategy(10,                           // max retries
+                                  Duration.create(1, "minute"), // within this time period
+                                  decider);                     // with this "decider" for handling
+
+        @Override
+        public SupervisorStrategy supervisorStrategy()
+        {
+            return strategy;
+        }
+
         public void onReceive(Object message)
         {
             if(message instanceof StartChildren)

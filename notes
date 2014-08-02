@@ -4,11 +4,20 @@ The project is a MUD with many monsters running around.
 To remove the need for a novel/awkward HCI, collision detection, graphics and so on it will use a CircleMUD-style "rooms and zones" topology. For further simplicity, the topology will always be arrayed in a 2D-grid (a third dimension can be added if this ends up being fun, with the only changes being to pathfinding). Interactions will be limited to the same "room".
 
 1- create a supervision tree with N do-nothing children, sleep(3), kill rand(1, N-1) children and observe restarts
-    how do we specify restart strategies? uhhhh
+    how do we specify restart strategies?
+        override "public SupervisorStrategy supervisorStrategy()"
+        a SupervisorStrategy must return:
+            - max retries
+            - during a time duration
+            - a Function (functional wrapper for a method) which:
+                - accepts Throwable t
+                - returns one of the static objects from SupervisorStrategy
+                    - resume / restart / stop / escalate
     can we / how do we recover state when restarting? uhh
     how do we kill children?
     how do we report crashes?
         They appear on the console...?
+    what happened to my messages when I used the "restart" rather than "resume" strategy?
 
 2- create a Router for each child, have all children subscribe to one another, emit a message every rand(1, 10) seconds, react to messages amusingly (children are now mobile entities)
     how do we create dynamic subscriptions?
