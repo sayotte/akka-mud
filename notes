@@ -13,10 +13,12 @@ To remove the need for a novel/awkward HCI, collision detection, graphics and so
                 - accepts Throwable t
                 - returns one of the static objects from SupervisorStrategy
                     - resume / restart / stop / escalate
-    can we / how do we recover state when restarting? uhh
+    can we / how do we recover state when restarting?
     how do we kill children?
     how do we report crashes?
-        They appear on the console...?
+        http://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
+        http://letitcrash.com/post/54348001688/2-2-spotlight-logging-of-actor-failures
+        
     what happened to my messages when I used the "restart" rather than "resume" strategy?
 
 2- create a Router for each child, have all children subscribe to one another, emit a message every rand(1, 10) seconds, react to messages amusingly (children are now mobile entities)

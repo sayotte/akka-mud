@@ -112,6 +112,7 @@ public class AkkaMud
             }
             else if(message instanceof ReportChildren)
             {
+                System.out.println("Mobile supervisor, ordering children to report!");
                 for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
                 {
                     child.tell(new AnnounceYourself(), this.self());
@@ -119,6 +120,7 @@ public class AkkaMud
             }
             else if(message instanceof RestartChildren)
             {
+                System.out.println("Mobile supervisor, resuming children!");
                 for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
                 {
                     child.tell(new RestartYourself(), this.self());
