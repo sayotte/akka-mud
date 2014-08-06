@@ -1,5 +1,7 @@
 // Use Allman style bracing or I'll stab you.
 
+package akkamud;
+
 import akka.actor.UntypedActor;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
@@ -138,6 +140,8 @@ public class AkkaMud
         final ActorRef mobileSup = system.actorOf(Props.create(MobileSupervisor.class),
                                                   "mobile-supervisor");
 
+        final StructuredLogger logger = StructuredLogger.getLogger();
+
         mobileSup.tell(new StartChildren(), null);
         mobileSup.tell(new ReportChildren(), null);
         mobileSup.tell(new RestartChildren(), null);
@@ -145,4 +149,5 @@ public class AkkaMud
 
         return;
     }
+
 }
