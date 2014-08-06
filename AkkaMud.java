@@ -24,6 +24,9 @@ import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.concurrent.duration.Duration;
 
+import akkamud.reporting.ReportLogger;
+import akkamud.reporting.ReportingOneForOneStrategy;
+
 public class AkkaMud
 {
     public static class StartChildren implements Serializable{}
@@ -139,8 +142,6 @@ public class AkkaMud
 
         final ActorRef mobileSup = system.actorOf(Props.create(MobileSupervisor.class),
                                                   "mobile-supervisor");
-
-        final StructuredLogger logger = StructuredLogger.getLogger();
 
         mobileSup.tell(new StartChildren(), null);
         mobileSup.tell(new ReportChildren(), null);
