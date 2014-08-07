@@ -40,14 +40,10 @@ public class ReportLogger
         // load the sqlite-JDBC driver using the current class loader
         // no longer needed as of JDBC-4.0
 //         Class.forName("org.sqlite.JDBC");
-
-        this.connection = null;
-        // create a database connection
         connection = DriverManager.getConnection("jdbc:sqlite:reports.db");
-        Statement statement = this.connection.createStatement();
-        statement.setQueryTimeout(30);  // set timeout to 30 sec.
 
-//             statement.executeUpdate("drop table if exists reports");
+        Statement statement = this.connection.createStatement();
+
         statement.executeUpdate("create table if not exists reports " +
                                                     "(type string, " +
                                                     "timestamp integer, " +
@@ -56,15 +52,6 @@ public class ReportLogger
                                                     "context string, " +
                                                     "reason blob, " +
                                                     "ext blob)");
-        //statement.executeUpdate("insert into person values(1, 'leo')");
-        //statement.executeUpdate("insert into person values(2, 'yui')");
-//             ResultSet rs = statement.executeQuery("select * from reports");
-//             while(rs.next())
-//             {
-//                 // read the result set
-//                 System.out.println("name = " + rs.getString("logger"));
-//                 System.out.println("id = " + rs.getInt("timestamp"));
-//             }
     }
 
     public synchronized void logProgress(String supervisor, String child, String context)
