@@ -66,22 +66,4 @@
       <version>2.3.4</version>
     </dependency>
   </dependencies>
-  <profiles>
-    <profile>
-        <id>sqlite</id>
-        <activation>
-            <activeByDefault>true</activeByDefault>
-        </activation>
-        <properties>
-            <!-- JDBC driver properties -->
-            <jdbcDriver.groupId>org.xerial</jdbcDriver.groupId>
-            <jdbcDriver.artifactId>sqlite</jdbcDriver.artifactId>
-            <jdbcDriver.version>3.7.2</jdbcDriver.version>
-            <jdbcDriver.className>org.sqlite.JDBC</jdbcDriver.className>
-
-            <!-- Data source properties -->
-            <dataSource.url>jdbc:sqlite:reports</dataSource.url>
-        </properties>
-    </profile>
-  </profiles>
 </project>
