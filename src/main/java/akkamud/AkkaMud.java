@@ -1,5 +1,7 @@
 // Use Allman style bracing or I'll stab you.
 
+package akkamud;
+
 import akka.actor.UntypedActor;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
