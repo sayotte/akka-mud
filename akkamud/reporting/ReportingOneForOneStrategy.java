@@ -3,6 +3,8 @@ package akkamud.reporting;
 import scala.collection.Iterable;
 import scala.concurrent.duration.Duration;
 
+import java.sql.SQLException;
+
 import akka.actor.OneForOneStrategy;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
@@ -21,7 +23,25 @@ public class ReportingOneForOneStrategy extends OneForOneStrategy
     {
         ReportLogger logger = ReportLogger.getLogger();
 
-        logger.logEvent("", "", "", null);
+//         logSupervisor(String supervisor, String child, String context, Throwable reason, String disposition)
+        try
+        {
+            logger.logSupervisor(context.self().path().name(),
+                                child.path().name(),
+                                "child_running",
+                                cause,
+                                "unknown disposition");
+        }
+        catch(ClassNotFoundException e)
+        {
+            System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught ClassNotFoundException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
+            context.system().shutdown();
+        }
+        catch(SQLException e)
+        {
+            System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught SQLException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
+            context.system().shutdown();
+        }
         return super.handleFailure(context, child, cause, stats, children);
     }
 }
