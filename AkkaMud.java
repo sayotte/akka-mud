@@ -1,7 +1,5 @@
 // Use Allman style bracing or I'll stab you.
 
-package akkamud;
-
 import akka.actor.UntypedActor;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
@@ -10,6 +8,7 @@ import akka.actor.Props;
 import java.io.Serializable;
 // import java.util.List;
 // import java.util.ArrayList;
+import java.sql.SQLException;
 
 import akka.japi.Function; // new Function<T, R>() { func_declaration_here }
 import akka.actor.SupervisorStrategy;
@@ -92,9 +91,9 @@ public class AkkaMud
             };
 
         private static SupervisorStrategy strategy = 
-            new OneForOneStrategy(10,                           // max retries
-                                  Duration.create(1, "minute"), // within this time period
-                                  decider);                     // with this "decider" for handling
+            new ReportingOneForOneStrategy(10,                           // max retries
+                                           Duration.create(1, "minute"), // within this time period
+                                           decider);                     // with this "decider" for handling
 
         @Override
         public SupervisorStrategy supervisorStrategy()
@@ -104,6 +103,8 @@ public class AkkaMud
 
         public void onReceive(Object message)
         {
+            ReportLogger logger = ReportLogger.getLogger();
+
             if(message instanceof StartChildren)
             {
                 System.out.println("Mobile supervisor, launching children!");
@@ -111,8 +112,22 @@ public class AkkaMud
                 int i;
                 for(i = 0; i < 10; i++)
                 {
-                    this.getContext().actorOf(Props.create(MobileEntity.class),
-                                              "mobile" + Integer.toString(i));
+                    ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
+                                                               "mobile" + Integer.toString(i));
+                  try
+                  {
+                    logger.logProgress(this.getSelf().path().name(), child.path().name(), "child_starting");
+                  }
+                  catch(ClassNotFoundException e)
+                  {
+                      System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught ClassNotFoundException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
+                      this.getContext().system().shutdown();
+                  }
+                  catch(SQLException e)
+                  {
+                      System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught SQLException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
+                      this.getContext().system().shutdown();
+                  }
                 }
             }
             else if(message instanceof ReportChildren)

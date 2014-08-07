@@ -72,13 +72,18 @@ public class ReportLogger
     {
         // timestamp, supervisor(name), child(name), context(stage of starting if applicable), reason(null), EXT:null
         this.initDB();
-        Statement statement = this.connection.createStatement();
-        statement.setQueryTimeout(1);  // set timeout to 30 sec.
-
         long timestamp = new Date().getTime();
-        statement.executeUpdate("INSERT INTO REPORTS (type, timestamp, supervisor, child, context) " +
-                                "VALUES ('" + PROGRESS_T + "', '" + timestamp + "', '" + 
-                                              supervisor + "', '" + child + "', '" + context + "')");
+        String statement_string =
+          "INSERT INTO REPORTS (type, timestamp, supervisor, child, context)" +
+          " VALUES (?, ?, ?, ?, ?)";
+        PreparedStatement statement = this.connection.prepareStatement(statement_string);
+        statement.setString(1, PROGRESS_T);
+        statement.setLong(2, timestamp);
+        statement.setString(3, supervisor);
+        statement.setString(4, child);
+        statement.setString(5, context);
+
+        statement.executeUpdate();
     }
 
     public synchronized void logSupervisor(String supervisor, String child, String context, Throwable reason, String disposition)
@@ -88,7 +93,7 @@ public class ReportLogger
         this.initDB();
         long timestamp = new Date().getTime();
         String statement_string =
-          "INSERT INTO REPORTS (type, timestamp, supervisor, child, context, reason, disposition)" +
+          "INSERT INTO REPORTS (type, timestamp, supervisor, child, context, reason, ext)" +
           " VALUES (?, ?, ?, ?, ?, ?, ?)";
         PreparedStatement statement = this.connection.prepareStatement(statement_string);
         statement.setString(1, SUPERVISOR_T);
