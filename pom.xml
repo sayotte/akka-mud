@@ -51,9 +51,9 @@
     </dependency>
 -->
     <dependency>
-      <groupId>org.xerial</groupId>
-      <artifactId>sqlite-jdbc4</artifactId>
-      <version>3.8.2-SNAPSHOT</version>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc4</artifactId>
+        <version>3.8.2-SNAPSHOT</version>
     </dependency>
     <dependency>
         <groupId>org.scala-lang</groupId>
@@ -61,9 +61,14 @@
         <version>2.11.2</version>
     </dependency>
     <dependency>
-      <groupId>com.typesafe.akka</groupId>
-      <artifactId>akka-actor_2.11</artifactId>
-      <version>2.3.4</version>
+        <groupId>com.typesafe.akka</groupId>
+        <artifactId>akka-actor_2.11</artifactId>
+        <version>2.3.4</version>
+    </dependency>
+    <dependency>
+        <groupId>com.typesafe.akka</groupId>
+        <artifactId>akka-persistence-experimental_2.11</artifactId>
+        <version>2.3.4</version>
     </dependency>
   </dependencies>
 </project>
