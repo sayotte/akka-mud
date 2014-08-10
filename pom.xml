@@ -19,6 +19,11 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.2</version>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.3.2</version>
@@ -70,5 +75,12 @@
         <artifactId>akka-persistence-experimental_2.11</artifactId>
         <version>2.3.4</version>
     </dependency>
+<!--
+    <dependency>
+        <groupId>com.github.michaelpisula</groupId>
+        <artifactId>akka-persistence-inmemory</artifactId>
+        <version>0.2.1</version>
+    </dependency>
+-->
   </dependencies>
 </project>

@@ -19,8 +19,11 @@ public class AkkaMud
 
         mobileSup.tell(new StartChildren(), null);
         mobileSup.tell(new ReportChildren(), null);
+        mobileSup.tell(new AnnounceHitpointsForChildren(), null);
+        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
+        mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         mobileSup.tell(new RestartChildren(), null);
-        mobileSup.tell(new ReportChildren(), null);
+        mobileSup.tell(new AnnounceHitpointsForChildren(), null);
 
         return;
     }

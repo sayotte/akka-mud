@@ -1,13 +1,31 @@
 package akkamud;
 
+import java.io.Serializable;
+
 import akka.actor.UntypedActor;
 import akka.persistence.UntypedPersistentActor;
+import akka.persistence.SnapshotOffer;
 import akka.japi.Procedure;
 
 import static akkamud.EntityCommand.*;
 
-// class MobileEntity extends UntypedPersistentActor
-class MobileEntity extends UntypedActor
+//// State and event definitions for MobileEntity
+class MobileEntityState implements Serializable
+{
+    private int hitpoints = 0;
+
+    public int getHitpoints() { return hitpoints; }
+
+    public void setHitpoints(int points) { hitpoints = points; }
+}
+class SetHitpointsEvent implements Serializable
+{
+    public final int points;
+//     SetHitpointsEvent() { this.points = 0; } // needed to make this serializable
+    SetHitpointsEvent(int points) { this.points = points; }
+}
+
+class MobileEntity extends UntypedPersistentActor
 {
 //         /**
 //         * Create Props for an actor of this type.
@@ -31,14 +49,72 @@ class MobileEntity extends UntypedActor
 //                 }
 //             });
 //         }
+    //// Boilerplate for Akka's persistence
+    @Override
+    public String persistenceId() { return this.self().path().name(); }
 
-    public void onReceive(Object message) throws Exception
+    private MobileEntityState state = new MobileEntityState();
+
+
+    //// The reactive model!
+    // First the definition for "normal" operations
+    public void onReceiveCommand(Object command) throws Exception
     {
-        if(message instanceof AnnounceYourself)
+        if(command instanceof AnnounceYourself)
             System.out.println("Mobile entity '" + this.self().path().name() + "' here!");
-        else if(message instanceof RestartYourself)
+        else if(command instanceof RestartYourself)
             throw new Exception();
+        else if(command instanceof AnnounceHitpoints)
+            System.out.println("Mobile entity '" + this.self().path().name() + "', hitpoints: " + state.getHitpoints());
+        else if(command instanceof AddHitpoints)
+            addHitpoints((AddHitpoints)command);
+        else if(command instanceof SubHitpoints)
+            subHitpoints((SubHitpoints)command);
         else
-            unhandled(message);
+            unhandled(command);
     }
+    // Now the definition for "recovery" operations (we've been restarted)
+    @Override
+    public void onReceiveRecover(Object msg)
+    {
+        System.out.println("Mobile entity '" + this.self().path().name() + "', recovering...");
+        if (msg instanceof SetHitpointsEvent)
+            recoverSetHitpoints((SetHitpointsEvent)msg);
+        else if (msg instanceof SnapshotOffer)
+            state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
+        else 
+          unhandled(msg);
+    }
+
+
+    //// Stuff to achieve persistent updates of state.hitpoints
+    // This one is used for async application of events during normal execution
+    private Procedure<SetHitpointsEvent> setHitpointsProc =
+        new Procedure<SetHitpointsEvent>()
+        {
+          public void apply(SetHitpointsEvent evt)
+          {
+            state.setHitpoints(evt.points);
+          }
+        };
+    // This one is used for sync application of events during recovery
+    private void recoverSetHitpoints(SetHitpointsEvent evt)
+    {
+        System.out.println("Mobile entity '" + this.self().path().name() + "', recovering by setting hitpoints to " + evt.points);
+        state.setHitpoints(evt.points);
+    }
+    private void addHitpoints(AddHitpoints cmd)
+    {
+        System.out.println("Mobile entity '" + this.self().path().name() + "', adding " + cmd.points + " hitpoints as commanded");
+        int extraHP = cmd.points;
+        SetHitpointsEvent evt = new SetHitpointsEvent(state.getHitpoints() + extraHP);
+        persist(evt, setHitpointsProc);
+    }
+    private void subHitpoints(SubHitpoints cmd)
+    {
+        int lessHP = cmd.points;
+        SetHitpointsEvent evt = new SetHitpointsEvent(state.getHitpoints() - lessHP);
+        persist(evt, setHitpointsProc);
+    }
+
 }

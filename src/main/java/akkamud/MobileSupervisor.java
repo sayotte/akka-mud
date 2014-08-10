@@ -30,9 +30,11 @@ class MobileSupervisor extends UntypedActor
     private ReportLogger logger;
     public MobileSupervisor()
     {
+        System.out.println("Mobile supervisor name: " + this.self().path().name());
         logger = ReportLogger.getLogger();
     }
-    private static Function<Throwable, Directive> decider = 
+
+    private final Function<Throwable, Directive> decider = 
         new Function<Throwable, Directive>()
         {
             @Override
@@ -40,16 +42,17 @@ class MobileSupervisor extends UntypedActor
             {
                 if(t instanceof java.lang.Exception)
                 {
-                    return resume();
+                    return restart();
                 }
-                return escalate();
+                else
+                    return escalate();
             }
         };
 
-    private static SupervisorStrategy strategy = 
+    private final SupervisorStrategy strategy = 
         new ReportingOneForOneStrategy(10,                           // max retries
-                                        Duration.create(1, "minute"), // within this time period
-                                        decider);                     // with this "decider" for handling
+                                       Duration.create(1, "minute"), // within this time period
+                                       decider);                     // with this "decider" for handling
 
     @Override
     public SupervisorStrategy supervisorStrategy()
@@ -65,6 +68,10 @@ class MobileSupervisor extends UntypedActor
             announceChildren();
         else if(message instanceof RestartChildren)
             restartChildren();
+        else if(message instanceof AnnounceHitpointsForChildren)
+            announceHitpointsForChildren();
+        else if(message instanceof PlusTenHitpointsForChildren)
+            plusTenHitpointsForChildren();
         else
             unhandled(message);
     }
@@ -72,9 +79,8 @@ class MobileSupervisor extends UntypedActor
     private void launchChildren()
     {
         System.out.println("Mobile supervisor, launching children!");
-        System.out.println("Mobile supervisor name: " + this.self().path().name());
         int i;
-        for(i = 0; i < 10; i++)
+        for(i = 0; i < 1; i++)
         {
             ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
                                                         "mobile" + Integer.toString(i));
@@ -106,10 +112,26 @@ class MobileSupervisor extends UntypedActor
 
     private void restartChildren()
     {
-        System.out.println("Mobile supervisor, resuming children!");
+        System.out.println("Mobile supervisor, restarting children!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
             child.tell(new RestartYourself(), this.self());
+        }
+    }
+    private void announceHitpointsForChildren()
+    {
+        System.out.println("Mobile supervisor, ordering children to announce hitpoints!");
+        for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
+        {
+            child.tell(new AnnounceHitpoints(), this.self());
+        }
+    }
+    private void plusTenHitpointsForChildren()
+    {
+        System.out.println("Mobile supervisor, adding ten hitpoints to all children!");
+        for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
+        {
+            child.tell(new AddHitpoints(10), this.self());
         }
     }
 }

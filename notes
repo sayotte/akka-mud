@@ -14,10 +14,17 @@ To remove the need for a novel/awkward HCI, collision detection, graphics and so
                 - returns one of the static objects from SupervisorStrategy
                     - resume / restart / stop / escalate
     can we / how do we recover state when restarting?
-        event sourced actors?
+        akka.persistence
             plugins for journal and snapshots: http://akka.io/community/#journal_plugins
             let's use in-memory for journal
             let's use something easy for snapshots
+        create declarative events for each state-change, and persist them in a journal
+        all events must be Serializable
+            this also means they should be top-level classes
+                or if not, their outer class should also be serializable
+        for each event, there must be both a "normal" and a "recovery" procedure
+            "normal" is passed in as a Procedure<...> object
+            "recovery" is handled by onReceiveRecover(Object msg)
     how do we kill children?
         send an akka.actor.Kill.getInstance() message
             causes an ActorKilled exception, fault handling ensues
@@ -30,8 +37,6 @@ To remove the need for a novel/awkward HCI, collision detection, graphics and so
         create our own logging framework (ReportLogger), or suffer under the legacy of syslog
         http://engineering.linkedin.com/distributed-systems/log-what-every-software-engineer-should-know-about-real-time-datas-unifying
         http://letitcrash.com/post/54348001688/2-2-spotlight-logging-of-actor-failures
-    what happened to my messages when I used the "restart" rather than "resume" strategy?
-        they're supposed to be there!
 
 2- create a Router for each child, have all children subscribe to one another, emit a message every rand(1, 10) seconds, react to messages amusingly (children are now mobile entities)
     how do we create dynamic subscriptions?
@@ -43,3 +48,5 @@ To remove the need for a novel/awkward HCI, collision detection, graphics and so
 4- create a second "room", and program mobiles to occasionally move from one room to the other by updating their membership in both rooms
     this operation cannot be atomic, can it?
         perhaps enter the other room before leaving the first one... that makes sense, actually
+
+5- create a snapshot of all current state, including rooms and entities
