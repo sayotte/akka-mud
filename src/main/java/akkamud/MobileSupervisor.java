@@ -5,6 +5,7 @@ package akkamud;
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.actor.Props;
+import akka.actor.Kill;
 import akka.japi.Function; // new Function<T, R>() { func_declaration_here }
 import akka.actor.SupervisorStrategy;
 import static akka.actor.SupervisorStrategy.resume;
@@ -19,6 +20,9 @@ import java.sql.SQLException;
 // import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.Await;
+import akka.pattern.Patterns;
+import scala.concurrent.Future;
 
 import akkamud.reporting.ReportLogger;
 import akkamud.reporting.ReportingOneForOneStrategy;
@@ -30,7 +34,7 @@ class MobileSupervisor extends UntypedActor
     private ReportLogger logger;
     public MobileSupervisor()
     {
-        System.out.println("Mobile supervisor name: " + this.self().path().name());
+        System.out.println(self().path().name() + ", running");
         logger = ReportLogger.getLogger();
     }
 
@@ -41,11 +45,12 @@ class MobileSupervisor extends UntypedActor
             public Directive apply(Throwable t)
             {
                 if(t instanceof java.lang.Exception)
-                {
                     return restart();
-                }
                 else
+                {
+                	System.out.println("Mobile supervisor, I caught an exception of type '" + t.getClass().getSimpleName() + "'");                	
                     return escalate();
+                }
             }
         };
 
@@ -72,13 +77,15 @@ class MobileSupervisor extends UntypedActor
             announceHitpointsForChildren();
         else if(message instanceof PlusTenHitpointsForChildren)
             plusTenHitpointsForChildren();
+        else if(message instanceof GetHitpointsFromChildren)
+        	getHitpointsFromChildren();
         else
             unhandled(message);
     }
 
     private void launchChildren()
     {
-        System.out.println("Mobile supervisor, launching children!");
+        System.out.println(self().path().name() + ": launching children!");
         int i;
         for(i = 0; i < 1; i++)
         {
@@ -86,7 +93,7 @@ class MobileSupervisor extends UntypedActor
                                                         "mobile" + Integer.toString(i));
             try
             {
-                logger.logProgress(this.getSelf().path().name(), child.path().name(), "child_starting");
+                logger.logProgress(self().path().name(), child.path().name(), "child_starting");
             }
             catch(ClassNotFoundException e)
             {
@@ -103,7 +110,7 @@ class MobileSupervisor extends UntypedActor
 
     private void announceChildren()
     {
-        System.out.println("Mobile supervisor, ordering children to report!");
+        System.out.println(self().path().name() + ": ordering children to report!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
             child.tell(new AnnounceYourself(), this.self());
@@ -112,15 +119,16 @@ class MobileSupervisor extends UntypedActor
 
     private void restartChildren()
     {
-        System.out.println("Mobile supervisor, restarting children!");
+        System.out.println(self().path().name() + ": restarting children!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
-            child.tell(new RestartYourself(), this.self());
+            //child.tell(new RestartYourself(), this.self());
+        	child.tell(akka.actor.Kill.getInstance(), this.self());
         }
     }
     private void announceHitpointsForChildren()
     {
-        System.out.println("Mobile supervisor, ordering children to announce hitpoints!");
+        System.out.println(self().path().name() + ": ordering children to announce hitpoints!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
             child.tell(new AnnounceHitpoints(), this.self());
@@ -128,10 +136,25 @@ class MobileSupervisor extends UntypedActor
     }
     private void plusTenHitpointsForChildren()
     {
-        System.out.println("Mobile supervisor, adding ten hitpoints to all children!");
+        System.out.println(self().path().name() + ": adding ten hitpoints to all children!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
             child.tell(new AddHitpoints(10), this.self());
         }
     }
+//    private void getHitpointsFromChildren()
+//    {
+//    	for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
+//    	{
+//    		System.out.println(self().path().name() + ": asking child " + child.path().name() + "about his hitpoints");
+//    		Integer hitpoints = -1;
+//    		final Future<Object> f = Patterns.ask(child, new GetHitpoints(), 10000);
+//    		try
+//    		{
+//    			hitpoints = (Integer)Await.result(f, Duration.create(10000, "millis"));
+//    			System.out.println(self().path().name() + ": found a child with " + hitpoints + " hitpoints.");
+//			}
+//    		catch(Exception e) { System.out.println("getHitpointsFromChildren(): caught exception: " + e); }
+//    	}
+//    }
 }
