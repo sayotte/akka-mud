@@ -1,6 +1,7 @@
 package akkamud;
 
 import java.io.Serializable;
+import akka.actor.ActorRef;
 
 class EntityCommand
 {
@@ -25,4 +26,26 @@ class EntityCommand
 
     public static final class AnnounceHitpointsForChildren implements Serializable {}
     public static final class PlusTenHitpointsForChildren implements Serializable {}
+    
+    public static final class SetDefaultRoom implements Serializable
+    {
+    	public ActorRef room;
+    	public SetDefaultRoom(ActorRef setRoom){ room = setRoom; }
+    }
+    public static final class MoveToRoom implements Serializable
+    {
+    	public ActorRef room;
+    	public MoveToRoom(ActorRef destRoom){ room = destRoom; }
+    }
+    
+    public static final class AddRoomEntity implements Serializable
+    {
+        public final ActorRef entity;
+        public AddRoomEntity(ActorRef ent){ entity = ent; }
+    }
+    public static final class RemoveRoomEntity implements Serializable
+    {
+        public final ActorRef entity;
+        public RemoveRoomEntity(ActorRef ent){ entity = ent; }
+    }
 }

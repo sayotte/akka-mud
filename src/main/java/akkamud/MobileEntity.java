@@ -3,8 +3,10 @@ package akkamud;
 import java.io.Serializable;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorPath;
 import akka.actor.UntypedActor;
 import akka.actor.Terminated;
+import akka.pattern.Patterns;
 import akka.persistence.UntypedPersistentActor;
 import akka.persistence.SnapshotOffer;
 import akka.japi.Procedure;
@@ -14,54 +16,36 @@ import scala.concurrent.Future;
 import scala.concurrent.Await;
 
 import static akkamud.EntityCommand.*;
+import static akkamud.Util.*;
 
 //// State and event definitions for MobileEntity
 class MobileEntityState implements Serializable
 {
     public Integer hitpoints = 0;
-    public ActorRef room = null;
+    public ActorPath roomPath = null;
 
-    public Integer getHitpoints() { return hitpoints; }
+    public Integer getHitpoints(){ return hitpoints; }
 
-    public void setHitpoints(Integer points) { hitpoints = points; }
+    public void setHitpoints(Integer points){ hitpoints = points; }
 }
 class SetHitpointsEvent implements Serializable
 {
     public final int points;
-//     SetHitpointsEvent() { this.points = 0; } // needed to make this serializable
-    SetHitpointsEvent(int points) { this.points = points; }
+    SetHitpointsEvent(int points){ this.points = points; }
 }
+class SetRoomEvent implements Serializable
+{
+	public final ActorPath roomPath;
+	SetRoomEvent(ActorPath newRoom){ roomPath = newRoom; }
+}	
 
 class MobileEntity extends UntypedPersistentActor
 {
-//         /**
-//         * Create Props for an actor of this type.
-//         * @param magicNumber The magic number to be passed to this actor’s constructor.
-//         * @return a Props for creating this actor, which can then be further configured
-//         *         (e.g. calling `.withDispatcher()` on it)
-//         */
-//         public static Props props(final int magicNumber)
-//         {
-//             // I don't understand this syntax at ALL, but apparently it lets us accept
-//             // a parameter when we're instantiating, like so:
-//             // ActorRef blah = system.actorOf(MobileEntity.props(__arg__), "blah");
-//             return Props.create(new Creator<DemoActor>()
-//             {
-//                 private static final long serialVersionUID = 1L;
-// 
-//                 @Override
-//                 public DemoActor create() throws Exception
-//                 {
-//                     return new DemoActor(magicNumber);
-//                 }
-//             });
-//         }
     //// Boilerplate for Akka's persistence
     @Override
     public String persistenceId() { return this.self().path().name(); }
 
     private MobileEntityState state = new MobileEntityState();
-
 
     //// The reactive model!
     // First the definition for "normal" operations
@@ -78,6 +62,8 @@ class MobileEntity extends UntypedPersistentActor
             addHitpoints((AddHitpoints)command);
         else if(command instanceof SubHitpoints)
             subHitpoints((SubHitpoints)command);
+        else if(command instanceof MoveToRoom)
+        	moveToRoom((MoveToRoom)command);
         else if(command instanceof Terminated)
         	handleTerminated(((Terminated)command).getActor());
         else
@@ -90,7 +76,9 @@ class MobileEntity extends UntypedPersistentActor
         System.out.println(self().path().name() + ": recovering...");
         if (msg instanceof SetHitpointsEvent)
             recoverSetHitpoints((SetHitpointsEvent)msg);
-        else if (msg instanceof SnapshotOffer)
+        else if(msg instanceof SetRoomEvent)
+        	recoverSetRoom((SetRoomEvent)msg);
+        else if(msg instanceof SnapshotOffer)
             state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
         else 
           unhandled(msg);
@@ -127,23 +115,101 @@ class MobileEntity extends UntypedPersistentActor
         persist(evt, setHitpointsProc);
     }
 
-    private void enterRoom(ActorRef room)
+    private ActorRef currentRoom = null; 
+	private Procedure<SetRoomEvent> setRoomProc =
+		new Procedure<SetRoomEvent>()
+		{
+			public void apply(SetRoomEvent evt)
+			{
+				state.roomPath = evt.roomPath;
+			}
+		};
+	private void recoverSetRoom(SetRoomEvent evt)
+	{
+		System.out.println(self().path().name() + ": recovering by setting room");
+		ActorRef joinedRoom = null;
+		try
+		{
+			ActorRef recoveredRoom = Util.resolvePathToRefSync(evt.roomPath, getContext().system());
+			joinedRoom = enterRoom(recoveredRoom);
+		}
+		catch(Exception e)
+		{
+			if(e instanceof ActorPathResolutionException)
+				System.out.println(self().path().name() + ": failed to resolve room?: " + e);
+			else
+				System.out.println(self().path().name() + ": exception recovering room:" + e);
+			joinedRoom = enterPurgatory();
+		}
+		finally
+		{
+			state.roomPath = joinedRoom.path();
+		}
+	}
+	private void setRoom(ActorPath roomPath)
+	{
+		SetRoomEvent evt = new SetRoomEvent(roomPath);
+		persist(evt, setRoomProc);
+	}
+	private ActorRef enterRoom(ActorRef room)
     {
-    	final Future<Object> f = Patterns.ask(room, new AddEntity(self()), 10);
     	try
     	{
+    		final Future<Object> f = Patterns.ask(room, new AddRoomEntity(self()), 10);
     		Await.ready(f, Duration.create(10, "millis"));
+        	getContext().watch(room);
+        	this.currentRoom = room;
     	}
     	catch(Exception e)
     	{
     		System.out.println(self().path().name() + ": caught an exception trying to enter a room: " + e);
+    		System.out.println(self().path().name() + ": moving to Purgatory!");
+    		this.currentRoom = enterPurgatory();
     	}
-    	getContext().watch(room);
+    	return this.currentRoom;
+    }
+    private ActorRef enterPurgatory()
+    {
+    	// Entering Purgatory *must* succeed, so we catch all exceptions
+    	try
+    	{
+	    	ActorRef purgatory = 
+	    		Util.resolvePathToRefSync(Purgatory.purgatoryPathString, 
+	    								  getContext().system()); 
+	    	purgatory.tell(new AddRoomEntity(getSelf()), getSelf());
+	    	return purgatory;
+    	}
+    	catch(Exception e)
+    	{
+    		System.out.println(self().path().name() + ": HOLY CRAP, exception entering Purgatory??: " +e);
+    		return null;
+    	}
+    }
+    private void moveToRoom(MoveToRoom cmd)
+    {
+    	// Moving room-to-room is not atomic; we must have one foot in each
+    	// room at some point. We model this by entering the new room before
+    	// exiting the old one.
+    	// 
+    	// Also, if we fail to enter the new room for some mechanical reason,
+    	// it may be useful to refuse to leave the previous room. It might be
+    	// more useful at some point in the future to instead be warped to some
+    	// sort of "purgatory" room, where no state-modifying messages are
+    	// delivered, waiting on administrative intervention.
+    	
+    	ActorRef oldRoom = currentRoom;
+    	ActorRef joinedRoom = enterRoom(cmd.room);
+		setRoom(joinedRoom.path());
+    	if(oldRoom != null)
+    		leaveRoom(oldRoom);
+    }
+    private void leaveRoom(ActorRef room)
+    {
+    	room.tell(new RemoveRoomEntity(getSelf()), getSelf());
     }
     
-    private void handlerTerminated(ActorRef who)
+    private void handleTerminated(ActorRef who)
     {
-    	
-    	
+    	return;
     }
 }

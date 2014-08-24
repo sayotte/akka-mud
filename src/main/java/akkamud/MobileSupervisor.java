@@ -32,6 +32,7 @@ import static akkamud.EntityCommand.*;
 class MobileSupervisor extends UntypedActor
 {
     private ReportLogger logger;
+    private ActorRef defaultRoom;
     public MobileSupervisor()
     {
         System.out.println(self().path().name() + ", running");
@@ -77,8 +78,10 @@ class MobileSupervisor extends UntypedActor
             announceHitpointsForChildren();
         else if(message instanceof PlusTenHitpointsForChildren)
             plusTenHitpointsForChildren();
-        else if(message instanceof GetHitpointsFromChildren)
-        	getHitpointsFromChildren();
+//        else if(message instanceof GetHitpointsFromChildren)
+//       	getHitpointsFromChildren();
+        else if(message instanceof SetDefaultRoom)
+        	setDefaultRoom(message);
         else
             unhandled(message);
     }
@@ -89,10 +92,11 @@ class MobileSupervisor extends UntypedActor
         int i;
         for(i = 0; i < 1; i++)
         {
-            ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
-                                                        "mobile" + Integer.toString(i));
             try
             {
+                ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
+                        "mobile" + Integer.toString(i));
+                child.tell(new MoveToRoom(this.defaultRoom),getSelf());
                 logger.logProgress(self().path().name(), child.path().name(), "child_starting");
             }
             catch(ClassNotFoundException e)
@@ -142,7 +146,16 @@ class MobileSupervisor extends UntypedActor
             child.tell(new AddHitpoints(10), this.self());
         }
     }
-//    private void getHitpointsFromChildren()
+    private void setDefaultRoom(Object message)
+    {
+    	SetDefaultRoom m = (SetDefaultRoom)message;
+    	defaultRoom = m.room;    	
+    }
+    private void moveChildToRoom()
+    {
+    	
+    }
+    //    private void getHitpointsFromChildren()
 //    {
 //    	for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
 //    	{

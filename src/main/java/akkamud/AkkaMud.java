@@ -14,6 +14,10 @@ public class AkkaMud
     {
         final ActorSystem system = ActorSystem.create("mud-actorsystem");
 
+        final ActorRef purgatory = system.actorOf(Props.create(Purgatory.class), "purgatory");
+        System.out.println("TOP: created purgatory node at path: " + purgatory.path().elements());
+//        final ActorRef roomSup = system.actorOf(Props.create(RoomSupervisor.class),
+//        										"room-supervisor");
         final ActorRef mobileSup = system.actorOf(Props.create(MobileSupervisor.class),
                                                   "mobile-supervisor");
 
@@ -21,8 +25,9 @@ public class AkkaMud
         mobileSup.tell(new ReportChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         mobileSup.tell(new PlusTenHitpointsForChildren(), null);
+        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
-        //mobileSup.tell(new RestartChildren(), null);
+        mobileSup.tell(new RestartChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         //mobileSup.tell(new GetHitpointsFromChildren(), null);
 
