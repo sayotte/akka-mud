@@ -74,6 +74,15 @@ class RoomSupervisor extends UntypedActor {
 	    		int id = rs.getInt("ID");
 	    		ActorRef room = getContext().actorOf(Props.create(Room.class), 
 	    											 "room" + id);
+	    		RoomState state = new RoomState();
+	    		state.name = rs.getString("name");
+	    		state.grossDescription = rs.getString("grossDescription");
+	    		ActorSystem sys = getContext().system();
+	    		String basePath = "akka://mud-actorsystem/user/room-supervisor/room";
+	    		String northPath = basePath + rs.getInt("northexit"); 
+	    		ActorSelection sel;
+	    		sel = sys.actorSelection(northPath);
+	    		
 	    	}
     	}
     	catch(Exception e)
