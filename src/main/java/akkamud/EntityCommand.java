@@ -43,6 +43,11 @@ class EntityCommand
     	public ActorRef room;
     	public MoveToRoom(ActorRef destRoom){ room = destRoom; }
     }
+    public static final class MoveAllChildrenToRoom implements Serializable
+    {
+    	public final ActorRef room;
+    	public MoveAllChildrenToRoom(ActorRef newRoom){ room = newRoom; }
+    }
     
     public static final class AddRoomEntity implements Serializable
     {

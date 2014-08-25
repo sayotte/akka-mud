@@ -67,7 +67,10 @@ class MobileEntity extends UntypedPersistentActor
         else if(command instanceof Terminated)
         	handleTerminated(((Terminated)command).getActor());
         else
+        {
+            System.out.println(self().path().name() + ": unhandled command: " + command);
             unhandled(command);
+        }
     }
     // Now the definition for "recovery" operations (we've been restarted)
     @Override
@@ -80,8 +83,11 @@ class MobileEntity extends UntypedPersistentActor
         	recoverSetRoom((SetRoomEvent)msg);
         else if(msg instanceof SnapshotOffer)
             state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
-        else 
+        else
+        {
+          System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
           unhandled(msg);
+        }
     }
 
 

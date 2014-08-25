@@ -31,6 +31,15 @@ public class AkkaMud
     			System.out.println("Caught exception resolving room1, trying again forever...: " + e);
     		}
     	}
+    	ActorRef room2 = null;
+    	while(room2 == null)
+    	{
+    		try{ room2 = Util.resolvePathToRefSync("akka://mud-actorsystem/user/room-supervisor/room2", system); }
+    		catch(Exception e)
+    		{
+    			System.out.println("Caught exception resolving room1, trying again forever...: " + e);
+    		}
+    	}
     	mobileSup.tell(new SetDefaultRoom(room1), null);
         mobileSup.tell(new StartChildren(), null);
         mobileSup.tell(new ReportChildren(), null);
@@ -38,9 +47,10 @@ public class AkkaMud
         mobileSup.tell(new PlusTenHitpointsForChildren(), null);
         mobileSup.tell(new PlusTenHitpointsForChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
-        mobileSup.tell(new RestartChildren(), null);
+//        mobileSup.tell(new RestartChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         //mobileSup.tell(new GetHitpointsFromChildren(), null);
+        mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
 
         return;
     }

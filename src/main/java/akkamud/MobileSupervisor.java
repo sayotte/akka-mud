@@ -67,6 +67,7 @@ class MobileSupervisor extends UntypedActor
     }
 
     public void onReceive(Object message)
+    throws Exception
     {
         if(message instanceof StartChildren)
             launchChildren();
@@ -80,6 +81,8 @@ class MobileSupervisor extends UntypedActor
             plusTenHitpointsForChildren();
 //        else if(message instanceof GetHitpointsFromChildren)
 //       	getHitpointsFromChildren();
+        else if(message instanceof MoveAllChildrenToRoom)
+        	moveAllChildrenToRoom((MoveAllChildrenToRoom)message);
         else if(message instanceof SetDefaultRoom)
         	setDefaultRoom((SetDefaultRoom)message);
         else
@@ -90,7 +93,7 @@ class MobileSupervisor extends UntypedActor
     {
         System.out.println(self().path().name() + ": launching children!");
         int i;
-        for(i = 0; i < 1; i++)
+        for(i = 0; i < 4; i++)
         {
             try
             {
@@ -111,7 +114,6 @@ class MobileSupervisor extends UntypedActor
             }
         }
     }
-
     private void announceChildren()
     {
         System.out.println(self().path().name() + ": ordering children to report!");
@@ -120,7 +122,6 @@ class MobileSupervisor extends UntypedActor
             child.tell(new AnnounceYourself(), this.self());
         }
     }
-
     private void restartChildren()
     {
         System.out.println(self().path().name() + ": restarting children!");
@@ -152,8 +153,15 @@ class MobileSupervisor extends UntypedActor
     			            msg.room.path().name());
     	defaultRoom = msg.room;    	
     }
-    private void moveChildToRoom()
+    private void moveAllChildrenToRoom(MoveAllChildrenToRoom msg)
+    throws Exception
     {
-    	return;
+    	if(msg.room == null)
+    		throw(new Exception("Fuck you and your NULL ROOM!"));
+        System.out.println(self().path().name() + ": ASDFKLJSDLKJSDFLKJSDFLKSDF!");
+        for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
+        {
+            child.tell(new MoveToRoom(msg.room), this.self());
+        }
     }
 }
