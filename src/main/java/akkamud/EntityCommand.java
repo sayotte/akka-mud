@@ -30,7 +30,13 @@ class EntityCommand
     public static final class SetDefaultRoom implements Serializable
     {
     	public ActorRef room;
-    	public SetDefaultRoom(ActorRef setRoom){ room = setRoom; }
+    	public SetDefaultRoom(ActorRef setRoom)
+    	throws Exception
+    	{
+    		if(setRoom == null)
+    			throw(new Exception("Fuck you and your NULL ROOMS!"));
+    		room = setRoom;
+		}
     }
     public static final class MoveToRoom implements Serializable
     {
@@ -48,4 +54,6 @@ class EntityCommand
         public final ActorRef entity;
         public RemoveRoomEntity(ActorRef ent){ entity = ent; }
     }
+
+    public static final class LoadRooms implements Serializable {}
 }

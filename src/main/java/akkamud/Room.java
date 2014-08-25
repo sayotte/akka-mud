@@ -45,6 +45,11 @@ class Room extends UntypedActor
     private RoomState state = new RoomState();
     private Router router = new Router(new BroadcastRoutingLogic());
 
+    public Room()
+    {
+    	System.out.println(self().path().name() + ": running!");
+    }
+    
     public void onReceive(Object command)
     {
         if(command instanceof AddRoomEntity)
@@ -61,12 +66,14 @@ class Room extends UntypedActor
     
     private void addEntity(ActorRef who)
     {
+    	System.out.println(self().path().name() + ": adding " + who.path().name());
         router.addRoutee(who);
         getContext().watch(who);
         getSender().tell(new Object(), getSelf());
     }
     private void remEntity(ActorRef who)
     {
+    	System.out.println(self().path().name() + ": removing " + who.path().name());
         router.removeRoutee(who);
         getContext().unwatch(who);
     }

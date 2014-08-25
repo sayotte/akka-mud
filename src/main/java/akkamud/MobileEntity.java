@@ -170,7 +170,7 @@ class MobileEntity extends UntypedPersistentActor
     }
     private ActorRef enterPurgatory()
     {
-    	// Entering Purgatory *must* succeed, so we catch all exceptions
+    	// Entering Purgatory *must* succeed since it's a fallback, so we catch all exceptions
     	try
     	{
 	    	ActorRef purgatory = 

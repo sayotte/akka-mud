@@ -81,7 +81,7 @@ class MobileSupervisor extends UntypedActor
 //        else if(message instanceof GetHitpointsFromChildren)
 //       	getHitpointsFromChildren();
         else if(message instanceof SetDefaultRoom)
-        	setDefaultRoom(message);
+        	setDefaultRoom((SetDefaultRoom)message);
         else
             unhandled(message);
     }
@@ -96,7 +96,7 @@ class MobileSupervisor extends UntypedActor
             {
                 ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
                         "mobile" + Integer.toString(i));
-                child.tell(new MoveToRoom(this.defaultRoom),getSelf());
+                child.tell(new MoveToRoom(this.defaultRoom), getSelf());
                 logger.logProgress(self().path().name(), child.path().name(), "child_starting");
             }
             catch(ClassNotFoundException e)
@@ -146,28 +146,14 @@ class MobileSupervisor extends UntypedActor
             child.tell(new AddHitpoints(10), this.self());
         }
     }
-    private void setDefaultRoom(Object message)
+    private void setDefaultRoom(SetDefaultRoom msg)
     {
-    	SetDefaultRoom m = (SetDefaultRoom)message;
-    	defaultRoom = m.room;    	
+    	System.out.println(self().path().name() + ": setting default room to: " + 
+    			            msg.room.path().name());
+    	defaultRoom = msg.room;    	
     }
     private void moveChildToRoom()
     {
-    	
+    	return;
     }
-    //    private void getHitpointsFromChildren()
-//    {
-//    	for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
-//    	{
-//    		System.out.println(self().path().name() + ": asking child " + child.path().name() + "about his hitpoints");
-//    		Integer hitpoints = -1;
-//    		final Future<Object> f = Patterns.ask(child, new GetHitpoints(), 10000);
-//    		try
-//    		{
-//    			hitpoints = (Integer)Await.result(f, Duration.create(10000, "millis"));
-//    			System.out.println(self().path().name() + ": found a child with " + hitpoints + " hitpoints.");
-//			}
-//    		catch(Exception e) { System.out.println("getHitpointsFromChildren(): caught exception: " + e); }
-//    	}
-//    }
 }

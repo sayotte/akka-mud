@@ -37,12 +37,13 @@ public class Util {
 	{
 		ActorRef ref = null;
 		Timeout t = new Timeout(100, TimeUnit.MILLISECONDS);
-		try
-		{
+//		try
+//		{
 			Future<ActorRef> fut = system.actorSelection(path).resolveOne(t);
 			ref = Await.result(fut, t.duration());
-		}
-		catch(TimeoutException e){ throw(new ActorPathResolutionException(e)); }
-		finally{ return ref; }
+			return ref;
+//		}
+//		catch(TimeoutException e){ throw(new ActorPathResolutionException(e)); }
+//		finally{ return ref; }
 	}
 }
