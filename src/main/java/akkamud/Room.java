@@ -15,6 +15,7 @@ import scala.concurrent.Await;
 import akka.actor.UntypedActor;
 import akka.actor.ActorPath;
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.Terminated;
 import akka.actor.UntypedActorContext;
 //import akka.persistence.UntypedPersistentActor;
@@ -34,10 +35,15 @@ class RoomState implements Serializable
     public String name = "nowhere";
     public String grossDescription = "This is a room. Right now, it's full of blackness.";
     public List<ActorPath> entities = new ArrayList<ActorPath>();
-    public ActorPath northExit = null;
-    public ActorPath eastExit = null;
-    public ActorPath southExit = null;
-    public ActorPath westExit = null;
+    public ActorRef northExit = null;
+    public ActorRef eastExit = null;
+    public ActorRef southExit = null;
+    public ActorRef westExit = null;
+    public String northExitPath = null;
+    public String eastExitPath = null;
+    public String southExitPath = null;
+    public String westExitPath = null;
+
 }
 
 class Room extends UntypedActor 
@@ -45,21 +51,34 @@ class Room extends UntypedActor
     private RoomState state = new RoomState();
     private Router router = new Router(new BroadcastRoutingLogic());
 
-    public Room()
-    {
-    	System.out.println(self().path().name() + ": running!");
-    }
+//    public Room()
+//    {
+//    	System.out.println(self().path().name() + ": running with full path: " + self().path().toString());
+//    }
     
     public void onReceive(Object command)
+    throws Exception
     {
+    	System.out.println(self().path().name()+": received command: "+command);
         if(command instanceof AddRoomEntity)
             addEntity(((AddRoomEntity)command).entity);
         else if(command instanceof RemoveRoomEntity)
             remEntity(((RemoveRoomEntity)command).entity);
         else if(command instanceof Terminated)
             handleTerminatedEntity(((Terminated)command).getActor());
+        else if(command instanceof RoomState)
+        {
+        	state = (RoomState)command;
+        	getSender().tell(new Object(), self());
+        }
+        else if(command instanceof ResolveExitPaths)
+        	resolveExitPaths();
         else if(command instanceof Announce)
-        	router.route(command, getSender());
+        {
+//        	router.route(command, getSender());
+        	router.route(new Object(), null);
+        	getSender().tell(new Object(), self());
+        }
         else
             unhandled(command);
     }
@@ -67,19 +86,55 @@ class Room extends UntypedActor
     private void addEntity(ActorRef who)
     {
     	System.out.println(self().path().name() + ": adding " + who.path().name());
-        router.addRoutee(who);
+        router = router.addRoutee(who);
         getContext().watch(who);
         getSender().tell(new Object(), getSelf());
+        router.route(new Entry(who), self());
     }
     private void remEntity(ActorRef who)
     {
     	System.out.println(self().path().name() + ": removing " + who.path().name());
-        router.removeRoutee(who);
+        router = router.removeRoutee(who);
         getContext().unwatch(who);
+//        router.route(new AnnounceRoomExit(who), who);
     }
     private void handleTerminatedEntity(ActorRef who)
     {
         System.out.println(self().path().name() + ": handling terminated room member");
         remEntity(who);
+    }
+    private void resolveExitPaths()
+    throws Exception
+    {
+//    	System.out.println(self().path().name() + ": resolving exit paths");
+    	ActorSystem sys = getContext().system();
+    	
+    	if(state.northExitPath != null)
+    	{
+//    		System.out.println(self().path().name() + ": resolving my north exit, whose path is: " + state.northExitPath);
+    		try{ state.northExit = Util.resolvePathToRefSync(state.northExitPath, sys); }
+    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving north exit (path: " + state.northExitPath + "): " + e)); } 
+    				                                
+    	}	
+    	if(state.eastExitPath != null)
+    	{
+//    		System.out.println(self().path().name() + ": resolving my east exit, whose path is: " + state.eastExitPath);
+    		try{ state.eastExit = Util.resolvePathToRefSync(state.eastExitPath, sys); }
+    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving east exit (path: " + state.eastExitPath + "): " + e)); } 
+    	}
+    	if(state.southExitPath != null)
+    	{
+//        	System.out.println(self().path().name() + ": resolving my south exit, whose path is: " + state.southExitPath);
+    		try{ state.southExit = Util.resolvePathToRefSync(state.southExitPath, sys); }
+
+    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving south exit (path: " + state.southExitPath + "): " + e)); } 
+    	}
+    	if(state.westExitPath != null)
+    	{
+//        	System.out.println(self().path().name() + ": resolving my west exit, whose path is: " + state.westExitPath);
+    		try{ state.westExit = Util.resolvePathToRefSync(state.westExitPath, sys); }
+    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving west exit (path: " + state.westExitPath + "): " + e)); } 
+    	}
+    	getSender().tell(new Object(), self());
     }
 }

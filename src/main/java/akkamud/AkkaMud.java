@@ -5,8 +5,14 @@ package akkamud;
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.pattern.Patterns;
+
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.Future;
 
 import static akkamud.EntityCommand.*;
+import static akkamud.Util.*;
 
 public class AkkaMud
 {
@@ -18,19 +24,30 @@ public class AkkaMud
         final ActorRef purgatory = system.actorOf(Props.create(Purgatory.class), "purgatory");
         final ActorRef roomSup = system.actorOf(Props.create(RoomSupervisor.class),
         										"room-supervisor");
-        roomSup.tell(new LoadRooms(), null);
+        long startTime = System.nanoTime();
+        Future<Object> f = Patterns.ask(roomSup,  new LoadRooms(), 2000);
+        Await.ready(f, Duration.create(2000, "millis"));
+        long endTime = System.nanoTime();
+        long durationMS = (endTime - startTime) / 1000000;
+        System.out.println("AkkaMUD: completed room load in " + durationMS + "ms");
+
         final ActorRef mobileSup = system.actorOf(Props.create(MobileSupervisor.class),
                                                   "mobile-supervisor");
 
+        startTime = System.nanoTime();
     	ActorRef room1 = null; 
     	while(room1 == null)
     	{
-    		try{ room1 = Util.resolvePathToRefSync("akka://mud-actorsystem/user/room-supervisor/room1", system); }
+    		try{ room1 = Util.resolvePathToRefSync("/user/room-supervisor/room1", system); }
     		catch(Exception e)
     		{
     			System.out.println("Caught exception resolving room1, trying again forever...: " + e);
     		}
     	}
+    	endTime = System.nanoTime();
+    	durationMS = (endTime - startTime) / 1000000;
+    	System.out.println("AkkaMUD: resolved room1 in " + durationMS + "ms");
+    	
     	ActorRef room2 = null;
     	while(room2 == null)
     	{
@@ -41,16 +58,19 @@ public class AkkaMud
     		}
     	}
     	mobileSup.tell(new SetDefaultRoom(room1), null);
-        mobileSup.tell(new StartChildren(), null);
-        mobileSup.tell(new ReportChildren(), null);
+        f = Patterns.ask(mobileSup, new StartChildren(),  1000);
+        Await.ready(f, Duration.create(1000, "millis"));
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         mobileSup.tell(new PlusTenHitpointsForChildren(), null);
-        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
+//        room1.tell(new Announce(null), room2);
+        f = Patterns.ask(room1, new Announce(null), 100);
+        Await.ready(f,  Duration.create(100, "millis"));
+//        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
 //        mobileSup.tell(new RestartChildren(), null);
         //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
         //mobileSup.tell(new GetHitpointsFromChildren(), null);
-        mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
+//        mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
 
         return;
     }

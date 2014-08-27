@@ -59,6 +59,18 @@ class EntityCommand
         public final ActorRef entity;
         public RemoveRoomEntity(ActorRef ent){ entity = ent; }
     }
+    public static final class ResolveExitPaths implements Serializable {}
+    public static final class AnnounceRoomEntry implements Serializable
+    {
+    	public ActorRef who;
+    	public AnnounceRoomEntry(ActorRef newWho){ who = newWho; }
+    }
+    public static final class AnnounceRoomExit implements Serializable
+    {
+    	public ActorRef who;
+    	public AnnounceRoomExit(ActorRef newWho){ who = newWho; }
+    }
 
     public static final class LoadRooms implements Serializable {}
+    public static final class LoadRoomsComplete implements Serializable {}
 }

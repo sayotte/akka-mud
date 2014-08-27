@@ -6,21 +6,28 @@ package akkamud;
 import static akka.actor.SupervisorStrategy.escalate;
 import static akka.actor.SupervisorStrategy.restart;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
+import scala.collection.JavaConversions;
+import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.Future;
 import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.actor.UntypedActor;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.japi.Function;
+import akka.pattern.Patterns;
 import akkamud.reporting.ReportLogger;
 import akkamud.reporting.ReportingOneForOneStrategy;
-
 import static akkamud.EntityCommand.*;
 /**
  * @author stephen.ayotte
@@ -66,24 +73,62 @@ class RoomSupervisor extends UntypedActor {
     {
     	try
     	{
+        	long startTime = System.nanoTime();
+        	
 	    	Connection connection = DriverManager.getConnection("jdbc:sqlite:rooms.db");
 	    	Statement stmt = connection.createStatement();
 	    	ResultSet rs = stmt.executeQuery("SELECT * FROM ROOMS");
+	    	long endTime = System.nanoTime();
+	    	long durationMS = (endTime - startTime) / 1000000;
+	    	System.out.println(self().path().name() + ": completed room query in " +durationMS+ "ms");
+	    	
 	    	while(rs.next())
 	    	{
+	    		startTime = System.nanoTime();
 	    		int id = rs.getInt("ID");
+//	    		System.out.println(self().path().name() + ": creating child room" + id);
 	    		ActorRef room = getContext().actorOf(Props.create(Room.class), 
 	    											 "room" + id);
 	    		RoomState state = new RoomState();
 	    		state.name = rs.getString("name");
 	    		state.grossDescription = rs.getString("grossDescription");
-	    		ActorSystem sys = getContext().system();
-	    		String basePath = "akka://mud-actorsystem/user/room-supervisor/room";
-	    		String northPath = basePath + rs.getInt("northexit"); 
-	    		ActorSelection sel;
-	    		sel = sys.actorSelection(northPath);
+
+	    		String basePath = "/user/room-supervisor/room";
+	    		int exitId = rs.getInt("northexit");
+	    		if(exitId != 0)
+	    			state.northExitPath = basePath + exitId;
+	    		exitId = rs.getInt("eastexit");
+	    		if(exitId != 0)
+	    			state.eastExitPath = basePath + exitId;
+	    		exitId = rs.getInt("southexit");
+	    		if(exitId != 0)
+	    			state.southExitPath = basePath + rs.getInt("southexit");
+	    		exitId = rs.getInt("westexit");
+	    		if(exitId != 0)
+	    			state.westExitPath = basePath + rs.getInt("westexit");
 	    		
+	    		Future<Object> f = Patterns.ask(room,  state, 10);
+	    		Await.ready(f,  Duration.create(10, "millis"));
+	    		endTime = System.nanoTime();
+	    		durationMS = (endTime - startTime) / 1000000;
+	    		System.out.println(self().path().name() + ": loaded room instance for " +room.path().name()+ " in " +durationMS+ "ms");
 	    	}
+	    	
+	    	/* We couldn't ask the rooms to resolve their exit paths until they were all
+	    	 * loaded (they'd just fail). Now that they're all loaded, ask them to resolve
+	    	 * those paths.
+	    	 */
+	    	for(ActorRef room: JavaConversions.asJavaIterable(getContext().children()))
+	    	{
+    			startTime = System.nanoTime();
+	    		Future<Object> f = Patterns.ask(room, new ResolveExitPaths(), 100);
+	    		Await.ready(f, Duration.create(100, "millis"));
+	    		endTime = System.nanoTime();
+	    		durationMS = (endTime - startTime) / 1000000;
+	    		System.out.println(self().path().name() + ": completed ResolveExitPaths for " + room.path().name() + " in " +durationMS+ "ms");
+	    	}
+	    	
+	    	getSender().tell(new Object(), self());
     	}
     	catch(Exception e)
     	{

@@ -36,7 +36,7 @@ public class Util {
 	throws ActorPathResolutionException, Exception
 	{
 		ActorRef ref = null;
-		Timeout t = new Timeout(100, TimeUnit.MILLISECONDS);
+		Timeout t = new Timeout(10000, TimeUnit.MILLISECONDS);
 //		try
 //		{
 			Future<ActorRef> fut = system.actorSelection(path).resolveOne(t);

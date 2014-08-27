@@ -51,7 +51,7 @@ class MobileEntity extends UntypedPersistentActor
     // First the definition for "normal" operations
     public void onReceiveCommand(Object command) throws Exception
     {
-    	System.out.println(self().path().name() + ": received message");
+    	System.out.println(self().path().name() + ": received message: "+command);
         if(command instanceof AnnounceYourself)
             System.out.println(self().path().name() + " here!");
         else if(command instanceof RestartYourself)
@@ -208,6 +208,7 @@ class MobileEntity extends UntypedPersistentActor
 		setRoom(joinedRoom.path());
     	if(oldRoom != null)
     		leaveRoom(oldRoom);
+    	getSender().tell(new Object(), self());
     }
     private void leaveRoom(ActorRef room)
     {

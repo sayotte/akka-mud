@@ -93,25 +93,25 @@ class MobileSupervisor extends UntypedActor
     {
         System.out.println(self().path().name() + ": launching children!");
         int i;
-        for(i = 0; i < 4; i++)
+        try
         {
-            try
-            {
-                ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
-                        "mobile" + Integer.toString(i));
-                child.tell(new MoveToRoom(this.defaultRoom), getSelf());
-                logger.logProgress(self().path().name(), child.path().name(), "child_starting");
-            }
-            catch(ClassNotFoundException e)
-            {
-                System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught ClassNotFoundException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
-                this.getContext().system().shutdown();
-            }
-            catch(SQLException e)
-            {
-                System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught SQLException, TERMINATING SYSTEM IMMEDIATELY. Stacktrace follows: " + e.getMessage());
-                this.getContext().system().shutdown();
-            }
+		    for(i = 0; i < 4; i++)
+		    {
+		        ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
+		                "mobile" + Integer.toString(i));
+		        logger.logProgress(self().path().name(), child.path().name(), "child_starting");
+		    }
+		    for(ActorRef child: JavaConversions.asJavaIterable(getContext().children()))
+		    {
+		    	Future<Object> f = Patterns.ask(child, new MoveToRoom(defaultRoom), 100);
+		    	Await.ready(f, Duration.create(100, "millis"));
+		    }
+		    getSender().tell(new Object(), self());
+        }
+        catch(Exception e)
+        {
+            System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught Exception, TERMINATING SYSTEM IMMEDIATELY. Exception follows: " + e);
+            this.getContext().system().shutdown();
         }
     }
     private void announceChildren()
@@ -156,9 +156,7 @@ class MobileSupervisor extends UntypedActor
     private void moveAllChildrenToRoom(MoveAllChildrenToRoom msg)
     throws Exception
     {
-    	if(msg.room == null)
-    		throw(new Exception("Fuck you and your NULL ROOM!"));
-        System.out.println(self().path().name() + ": ASDFKLJSDLKJSDFLKJSDFLKSDF!");
+        System.out.println(self().path().name() + ": moving all children to some room");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
             child.tell(new MoveToRoom(msg.room), this.self());
