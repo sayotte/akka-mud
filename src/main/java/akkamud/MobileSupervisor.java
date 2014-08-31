@@ -91,7 +91,8 @@ class MobileSupervisor extends UntypedActor
         {
 		    for(i = 0; i < 4; i++)
 		    {
-		        ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
+//		        ActorRef child = this.getContext().actorOf(Props.create(MobileEntity.class),
+		    	ActorRef child = this.getContext().actorOf(Props.create(Human.class),
 		                "mobile" + Integer.toString(i));
 		        logger.logProgress(self().path().name(), child.path().name(), "child_starting");
 		    }
