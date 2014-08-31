@@ -60,16 +60,10 @@ public class AkkaMud
     	mobileSup.tell(new SetDefaultRoom(room1), null);
         f = Patterns.ask(mobileSup, new StartChildren(),  1000);
         Await.ready(f, Duration.create(1000, "millis"));
-        //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
-//        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
 //        room1.tell(new Announce(null), room2);
 //        f = Patterns.ask(room1, new Announce(null), 100);
 //        Await.ready(f,  Duration.create(100, "millis"));
-//        mobileSup.tell(new PlusTenHitpointsForChildren(), null);
-        //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
 //        mobileSup.tell(new RestartChildren(), null);
-        //mobileSup.tell(new AnnounceHitpointsForChildren(), null);
-        //mobileSup.tell(new GetHitpointsFromChildren(), null);
         mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
 
         return;

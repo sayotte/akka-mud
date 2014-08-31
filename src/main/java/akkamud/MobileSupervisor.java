@@ -75,12 +75,6 @@ class MobileSupervisor extends UntypedActor
             announceChildren();
         else if(message instanceof RestartChildren)
             restartChildren();
-        else if(message instanceof AnnounceHitpointsForChildren)
-            announceHitpointsForChildren();
-        else if(message instanceof PlusTenHitpointsForChildren)
-            plusTenHitpointsForChildren();
-//        else if(message instanceof GetHitpointsFromChildren)
-//       	getHitpointsFromChildren();
         else if(message instanceof MoveAllChildrenToRoom)
         	moveAllChildrenToRoom((MoveAllChildrenToRoom)message);
         else if(message instanceof SetDefaultRoom)
@@ -129,22 +123,6 @@ class MobileSupervisor extends UntypedActor
         {
             //child.tell(new RestartYourself(), this.self());
         	child.tell(akka.actor.Kill.getInstance(), this.self());
-        }
-    }
-    private void announceHitpointsForChildren()
-    {
-        System.out.println(self().path().name() + ": ordering children to announce hitpoints!");
-        for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
-        {
-            child.tell(new AnnounceHitpoints(), this.self());
-        }
-    }
-    private void plusTenHitpointsForChildren()
-    {
-        System.out.println(self().path().name() + ": adding ten hitpoints to all children!");
-        for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
-        {
-            child.tell(new AddHitpoints(10), this.self());
         }
     }
     private void setDefaultRoom(SetDefaultRoom msg)
