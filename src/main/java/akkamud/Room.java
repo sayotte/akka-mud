@@ -59,7 +59,7 @@ class Room extends UntypedActor
     public void onReceive(Object command)
     throws Exception
     {
-    	System.out.println(self().path().name()+": received command: "+command);
+//    	System.out.println(self().path().name()+": received command: "+command);
         if(command instanceof AddRoomEntity)
             addEntity(((AddRoomEntity)command).entity);
         else if(command instanceof RemoveRoomEntity)

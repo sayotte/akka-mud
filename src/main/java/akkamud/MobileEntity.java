@@ -1,20 +1,21 @@
 package akkamud;
 
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorPath;
+import akka.actor.Cancellable;
 import akka.actor.UntypedActor;
 import akka.actor.Terminated;
 import akka.pattern.Patterns;
 import akka.persistence.UntypedPersistentActor;
 import akka.persistence.SnapshotOffer;
 import akka.japi.Procedure;
-
 import scala.concurrent.duration.Duration;
+//import scala.concurrent.duration.Duration.Zero;
 import scala.concurrent.Future;
 import scala.concurrent.Await;
-
 import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
 
@@ -46,12 +47,20 @@ class MobileEntity extends UntypedPersistentActor
     public String persistenceId() { return this.self().path().name(); }
 
     private MobileEntityState state = new MobileEntityState();
+    
+    private final Cancellable tick = getContext().system().scheduler().schedule(
+		Duration.create(0,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
+		Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
+		getSelf(), "tick", getContext().dispatcher(), null);
 
+    @Override
+    public void postStop(){ tick.cancel(); }
+    
     //// The reactive model!
     // First the definition for "normal" operations
     public void onReceiveCommand(Object command) throws Exception
     {
-    	System.out.println(self().path().name() + ": received message: "+command);
+//    	System.out.println(self().path().name() + ": received message: "+command);
         if(command instanceof AnnounceYourself)
             System.out.println(self().path().name() + " here!");
         else if(command instanceof RestartYourself)
@@ -64,11 +73,13 @@ class MobileEntity extends UntypedPersistentActor
             subHitpoints((SubHitpoints)command);
         else if(command instanceof MoveToRoom)
         	moveToRoom((MoveToRoom)command);
+        else if(command instanceof Entry)
+        	handleRoomEntry(((Entry)command).who);
         else if(command instanceof Terminated)
         	handleTerminated(((Terminated)command).getActor());
         else
         {
-            System.out.println(self().path().name() + ": unhandled command: " + command);
+            System.out.println(self().path().name() + ": unhandled command: "+command+" from "+getSender().path().name());
             unhandled(command);
         }
     }
@@ -214,7 +225,13 @@ class MobileEntity extends UntypedPersistentActor
     {
     	room.tell(new RemoveRoomEntity(getSelf()), getSelf());
     }
-    
+    private void handleRoomEntry(ActorRef who)
+    {
+    	if(who.equals(self()))
+    		System.out.println(self().path().name()+": I SEE MYSELF ENTERING THE ROOM!");
+    	else
+    		System.out.println(self().path().name()+": I see "+who.path().name()+" entering the room.");
+    }
     private void handleTerminated(ActorRef who)
     {
     	return;
