@@ -64,7 +64,7 @@ public class AkkaMud
 //        f = Patterns.ask(room1, new Announce(null), 100);
 //        Await.ready(f,  Duration.create(100, "millis"));
 //        mobileSup.tell(new RestartChildren(), null);
-        mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
+//        mobileSup.tell(new MoveAllChildrenToRoom(room2), null);
 
         return;
     }

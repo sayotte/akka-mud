@@ -3,6 +3,7 @@ package akkamud;
 import static akka.actor.SupervisorStrategy.escalate;
 import static akka.actor.SupervisorStrategy.restart;
 import scala.concurrent.duration.Duration;
+import akka.actor.ActorRef;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.japi.Function;
 import akka.japi.Procedure;
@@ -78,13 +79,16 @@ class SetCreatureVitalEvent implements Serializable
  */
 class CreatureState extends MobileEntityState
 {    
-    // bloodflow restores stamina, or drives bloodloss when there are wounds
+	/* All of the heartrate variables should be hidden or set by
+	 * subclasses.
+	 */
     // bloodflow is units * heartbeats, beats are measured in bpm
-    public long heartRate = 60; 
+    public long heartRate = 1; 
     // HR returns to this when there's no activity
-    public long restingHeartRate = 60;
-    final public long minHeartRate = 40;
-    final public long maxHeartRate = 180;
+    public long restingHeartRate = 1;
+    // HR should be 
+    public long minHeartRate = 1;
+    public long maxHeartRate = 2;
 
     public long bloodVolume = 1000;
     final public long maxBloodVolume = 1000;
@@ -108,10 +112,10 @@ class CreatureState extends MobileEntityState
     final public long maxStamina = 10000;
 }
 
-class Creature extends MobileEntity
+abstract class Creature extends MobileEntity
 {
-    // abstract? this should be implemented by children
     protected CreatureState state;
+    protected ActorRef partialAI;
     protected long lastTickTime = System.nanoTime();
     
     public void onReceiveCommand(Object command) throws Exception
@@ -130,7 +134,7 @@ class Creature extends MobileEntity
             unhandled(msg);
     }
     
-    private void handleTick() throws Exception
+    protected void handleTick() throws Exception
     {
     	updateStamina();
     	updateHeartrate();
@@ -147,7 +151,7 @@ class Creature extends MobileEntity
         double bloodFlow = ((double)state.bloodVolume / (double)state.maxBloodVolume) * 
         					(double)state.maxTotalBloodFlow * (double)heartbeats;
         //System.out.println(self().path().name()+": handleTick(): bloodFlow = ("+state.bloodVolume+" / "+state.maxBloodVolume+") * "+state.maxTotalBloodFlow);
-        System.out.println(self().path().name()+": handleTick(): bloodFlow: "+bloodFlow);
+        //System.out.println(self().path().name()+": handleTick(): bloodFlow: "+bloodFlow);
         long newStamina = state.stamina + (long)(bloodFlow * heartbeats * state.cardioEfficiency);
         //System.out.println(self().path().name()+": handleTick(): newStamina: "+newStamina);
         if(state.stamina != newStamina &&
@@ -174,9 +178,10 @@ class Creature extends MobileEntity
         	setCreatureVital(CreatureVitalSelector.HEARTRATE, newHeartRate);
         }
         //System.out.println(self().path().name()+": handleTick(): newHeartRate: "+newHeartRate);
-        System.out.println("");
+        //System.out.println("");
     }
-    
+    abstract List<BleedingWound> getWounds(); 
+
     private void setCreatureVital(CreatureVitalSelector which, long newVal)
     {
     	SetCreatureVitalEvent evt = new SetCreatureVitalEvent();

@@ -1,6 +1,8 @@
 package akkamud;
 
 import java.io.Serializable;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
@@ -30,11 +32,25 @@ import akka.util.Timeout;
 
 import static akkamud.EntityCommand.*;
 
+
+enum Directions
+{
+	NORTH, EAST, SOUTH, WEST
+}
+
+class WhatAreYourExits implements Serializable { private static final long serialVersionUID = 1; }
+class TheseAreMyExits implements Serializable
+{
+	private static final long serialVersionUID = 1;
+	Map<Directions, ActorRef> exitRefs;
+	Map<Directions, String> exitPaths;
+}
+
 class RoomState implements Serializable
 {
     public String name = "nowhere";
     public String grossDescription = "This is a room. Right now, it's full of blackness.";
-    public List<ActorPath> entities = new ArrayList<ActorPath>();
+    //public List<ActorPath> entities = new ArrayList<ActorPath>();
     public ActorRef northExit = null;
     public ActorRef eastExit = null;
     public ActorRef southExit = null;
@@ -43,18 +59,12 @@ class RoomState implements Serializable
     public String eastExitPath = null;
     public String southExitPath = null;
     public String westExitPath = null;
-
 }
 
 class Room extends UntypedActor 
 {
     private RoomState state = new RoomState();
     private Router router = new Router(new BroadcastRoutingLogic());
-
-//    public Room()
-//    {
-//    	System.out.println(self().path().name() + ": running with full path: " + self().path().toString());
-//    }
     
     public void onReceive(Object command)
     throws Exception
@@ -79,6 +89,8 @@ class Room extends UntypedActor
         	router.route(new Object(), null);
         	getSender().tell(new Object(), self());
         }
+        else if(command instanceof WhatAreYourExits)
+        	reportExits();
         else
             unhandled(command);
     }
@@ -137,4 +149,18 @@ class Room extends UntypedActor
     	}
     	getSender().tell(new Object(), self());
     }
+    private void reportExits()
+    {
+    	TheseAreMyExits response = new TheseAreMyExits();
+    	response.exitRefs.put(Directions.NORTH, state.northExit);
+    	response.exitRefs.put(Directions.EAST,  state.eastExit);
+    	response.exitRefs.put(Directions.SOUTH, state.southExit);
+    	response.exitRefs.put(Directions.WEST,  state.westExit);
+    	response.exitPaths.put(Directions.NORTH, state.northExitPath);
+    	response.exitPaths.put(Directions.EAST,  state.eastExitPath);
+    	response.exitPaths.put(Directions.SOUTH, state.southExitPath);
+    	response.exitPaths.put(Directions.WEST,  state.westExitPath);
+    	getSender().tell(response, getSelf());
+    }
+
 }

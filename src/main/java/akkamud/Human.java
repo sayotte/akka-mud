@@ -1,5 +1,9 @@
 package akkamud;
 
+import akka.actor.ActorRef;
+import akka.actor.Props;
+
+import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -36,12 +40,45 @@ class HumanState extends CreatureState
 		        	        bodyBloodFlow + 
 							neckBloodFlow +
 							headBloodFlow;
+		heartRate = 60;
+		restingHeartRate = 60;
+		minHeartRate = 60;
+		maxHeartRate = 180;
 	}
 }
 
-class Human extends Creature {
+class Human extends Creature
+{
+	private boolean moving;
+	private boolean busy;
 	public Human()
 	{
 		this.state = new HumanState();
+		this.partialAI = getContext().actorOf(Props.create(PartialAI.class), "partialAI");
+		moving = false;
+		busy = false;
+	}
+	
+	public void onReceiveCommand(Object command)
+	throws Exception
+	{
+		if(command.equals("tick"))
+			handleTick();
+		super.onReceiveCommand(command);
+	}
+	
+	protected void handleTick()
+	throws Exception
+	{
+		if(moving != true)
+			partialAI.tell(new RequestMovementInstructions(), getSelf());
+		if(busy != true)
+			partialAI.tell(new RequestActionInstructions(), getSelf());
+		super.handleTick();
+	}
+	
+	protected List<BleedingWound> getWounds()
+	{
+		return null;
 	}
 }

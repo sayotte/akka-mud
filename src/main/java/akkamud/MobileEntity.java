@@ -35,13 +35,13 @@ class SetRoomEvent implements Serializable
 	SetRoomEvent(ActorPath newRoom){ roomPath = newRoom; }
 }	
 
-class MobileEntity extends UntypedPersistentActor
+abstract class MobileEntity extends UntypedPersistentActor
 {
     //// Boilerplate for Akka's persistence
     @Override
     public String persistenceId() { return this.self().path().name(); }
 
-    private MobileEntityState state = new MobileEntityState();
+    protected MobileEntityState state;
     
     protected final Cancellable tick = getContext().system().scheduler().schedule(
 		Duration.create(0,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
@@ -63,8 +63,8 @@ class MobileEntity extends UntypedPersistentActor
         };
 	private final SupervisorStrategy strategy =
 	    new ReportingOneForOneStrategy(10,                           // max retries
-	            Duration.create(1, "minute"), // within this time period
-	            decider);                     // with this "decider" for handling
+	                                   Duration.create(1, "minute"), // within this time period
+	                                   decider);                     // with this "decider" for handling
 	@Override
 	public SupervisorStrategy supervisorStrategy(){ return strategy; }
     
@@ -83,6 +83,8 @@ class MobileEntity extends UntypedPersistentActor
         	handleRoomEntry(((Entry)command).who);
         else if(command instanceof Terminated)
         	handleTerminated(((Terminated)command).getActor());
+        else if(command instanceof WhatAreYourExits)
+        	reportExits((WhatAreYourExits)command);
         else
         {
             System.out.println(self().path().name() + ": unhandled command: "+command+" from "+getSender().path().name());
@@ -112,6 +114,7 @@ class MobileEntity extends UntypedPersistentActor
 		{
 			public void apply(SetRoomEvent evt)
 			{
+				System.out.println(self().path().name()+": setRoomProc(): evt: "+evt);
 				state.roomPath = evt.roomPath;
 			}
 		};
@@ -209,5 +212,18 @@ class MobileEntity extends UntypedPersistentActor
     private void handleTerminated(ActorRef who)
     {
     	return;
+    }
+    private void reportExits(WhatAreYourExits cmd)
+    throws Exception
+    {
+    	if(currentRoom == null)
+    	{
+    		getSender().tell(new Object(), getSelf());
+    		return;
+    	}
+    	TheseAreMyExits response;
+    	final Future<Object> f = Patterns.ask(currentRoom, cmd, 10);
+    	response = (TheseAreMyExits)Await.result(f, Duration.create(10, TimeUnit.MILLISECONDS));
+    	getSender().tell(response, getSelf());
     }
 }
