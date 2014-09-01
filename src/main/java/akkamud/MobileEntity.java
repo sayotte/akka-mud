@@ -115,6 +115,7 @@ abstract class MobileEntity extends UntypedPersistentActor
 			public void apply(SetRoomEvent evt)
 			{
 				System.out.println(self().path().name()+": setRoomProc(): evt: "+evt);
+				System.out.println(self().path().name()+": setRoomProc(): state: "+state);
 				state.roomPath = evt.roomPath;
 			}
 		};
