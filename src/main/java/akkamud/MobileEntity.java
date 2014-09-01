@@ -8,14 +8,19 @@ import akka.actor.ActorPath;
 import akka.actor.Cancellable;
 import akka.actor.UntypedActor;
 import akka.actor.Terminated;
+import akka.actor.SupervisorStrategy;
+import akka.actor.SupervisorStrategy.Directive;
 import akka.pattern.Patterns;
 import akka.persistence.UntypedPersistentActor;
 import akka.persistence.SnapshotOffer;
+import akka.japi.Function;
 import akka.japi.Procedure;
+import akkamud.reporting.ReportingOneForOneStrategy;
 import scala.concurrent.duration.Duration;
 //import scala.concurrent.duration.Duration.Zero;
 import scala.concurrent.Future;
 import scala.concurrent.Await;
+import static akka.actor.SupervisorStrategy.restart;
 import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
 
@@ -38,13 +43,30 @@ class MobileEntity extends UntypedPersistentActor
 
     private MobileEntityState state = new MobileEntityState();
     
-    private final Cancellable tick = getContext().system().scheduler().schedule(
+    protected final Cancellable tick = getContext().system().scheduler().schedule(
 		Duration.create(0,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
 		Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
 		getSelf(), "tick", getContext().dispatcher(), null);
 
     @Override
     public void postStop(){ tick.cancel(); }
+    
+    private final Function<Throwable, Directive> decider = 
+        new Function<Throwable, Directive>()
+        {
+            @Override
+            public Directive apply(Throwable t)
+            {
+            	System.out.println(self().path().name()+": decider(): I caught an exception of type '" + t.getClass().getSimpleName() + "', returning restart()");                	
+                return restart();
+            }
+        };
+	private final SupervisorStrategy strategy =
+	    new ReportingOneForOneStrategy(10,                           // max retries
+	            Duration.create(1, "minute"), // within this time period
+	            decider);                     // with this "decider" for handling
+	@Override
+	public SupervisorStrategy supervisorStrategy(){ return strategy; }
     
     //// The reactive model!
     // First the definition for "normal" operations
@@ -78,7 +100,7 @@ class MobileEntity extends UntypedPersistentActor
             state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
         else
         {
-          System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
+    	  System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
           unhandled(msg);
         }
     }
