@@ -22,7 +22,7 @@ class BleedingWound
 
 enum CreatureVitalSelector
 {
-    HEARTRATE, RESTINGHEARTRATE, BLOODVOLUME, STAMINA
+    HEARTRATE, RESTINGHEARTRATE, BLOODVOLUME, STAMINA, CARDIOEFFICIENCY
 }
 class SetCreatureVitalEvent implements Serializable
 {
@@ -45,6 +45,16 @@ class CreatureState extends MobileEntityState
     public long bloodVolume = 1000;
     final public long maxBloodVolume = 1000;
     public long maxTotalBloodFlow = -1; // must be set in constructor
+    
+    // The rate at which bloodflow is converted into stamina
+    // This is the overall measure of physical fitness; at 1.0, the
+    // creature will regain stamina and return to a lower heartrate
+    // much faster than at 0.5, leaving it less vulnerable to bloodloss
+    // from wounds and generally better able to cope with continuous
+    // exertion.
+    // This is the stat most closely aligned with what other games
+    // call "stamina".
+    public double cardioEfficiency = 0.5; 
     
     // stamina is a modifier on strength; the lower it goes, the less
     // strength is put into every action
@@ -94,7 +104,7 @@ class Creature extends MobileEntity
         					state.maxTotalBloodFlow * heartbeats;
         //System.out.println(self().path().name()+": handleTick(): bloodFlow = ("+state.bloodVolume+" / "+state.maxBloodVolume+") * "+state.maxTotalBloodFlow);
         //System.out.println(self().path().name()+": handleTick(): bloodFlow: "+bloodFlow);
-        long newStamina = state.stamina + (long)(bloodFlow * heartbeats);
+        long newStamina = state.stamina + (long)(bloodFlow * heartbeats * state.cardioEfficiency);
         //System.out.println(self().path().name()+": handleTick(): newStamina: "+newStamina);
         if(state.stamina != newStamina &&
 		   newStamina <= state.maxStamina &&
