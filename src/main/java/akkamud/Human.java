@@ -17,6 +17,10 @@ class HumanState extends CreatureState
 	List<BleedingWound> rightLegWounds = new ArrayList();
 	final public long perLegBloodFlow = 8; // bleed out in 60s w/ 1 max leg wound @ 120bpm
 	
+	public double bodyCond = 100.0;
+	List<BleedingWound> bodyWounds = new ArrayList();
+	final public long bodyBloodFlow = 25; // bleed out in 20s w/ max wound @ 120bpm
+	
 	public double neckCond = 100.0;
 	final public long neckBloodFlow = 16; // bleed out in 30s w/ maximum neck wound @ 120bpm
 	List<BleedingWound> neckWounds = new ArrayList();
@@ -29,8 +33,9 @@ class HumanState extends CreatureState
 	{
 		maxTotalBloodFlow = (perArmBloodFlow * 2) +
 		        	        (perLegBloodFlow * 2) +
+		        	        bodyBloodFlow + 
 							neckBloodFlow +
-							headBloodFlow; // 43
+							headBloodFlow;
 	}
 }
 

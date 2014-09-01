@@ -14,10 +14,28 @@ import java.util.ArrayList;
 
 import java.lang.reflect.Field;
 
-class BleedingWound
+/**
+ * This class represents a wound that causes blood loss with each heartbeat.
+ * 
+ * <p>It must be associated with the list of wounds for a given
+ *  <tt>Creature</tt> to affect that creature. Most <tt>Creatures</tt> will
+ *  keep a list of these for each body region.
+ * @author stephen.ayotte
+ * @see Creature
+ */
+class BleedingWound implements Serializable
 {
-    public long flow;
-    public BleedingWound(long newFlow){ flow = newFlow; } 
+	// the percentage of blood in the area which is lost
+	// amputation would be 1.0, a minor cut might be 0.01
+    public double flow;
+    // the timing 
+    public long inflictedTime;
+    public BleedingWound(double newFlow)
+    {
+		flow = newFlow;
+		                                    // ms      sec
+		inflictedTime = System.nanoTime() / 1000000 / 1000;
+	} 
 }
 
 enum CreatureVitalSelector
@@ -31,16 +49,42 @@ class SetCreatureVitalEvent implements Serializable
     public double doubleval;
 }
 
+/**
+ * This class represents a generic living creature. It should be subclassed to
+ * create a specific creature type.
+ * 
+ * <p><tt>Creatures</tt> have stamina which is consumed by physical activities.
+ * As they exhaust their stamina, they weaken and are unable to apply as much
+ * force and speed to their activities. Their stamina is restored over time
+ * by bloodflow, which is the product of overall vascular capacity (fixed) and
+ * heartrate (variable based on remaining stamina). Each heartbeat will restore
+ * a variable amount of stamina based on the cardiovascular efficiency of 
+ * the entity. Bloodflow and stamina restoration are also affected by blood
+ * volume, which represents the total amount of blood in the body.
+ * 
+ * <p>Starting from a fixed maximum, blood volume can be lost due to
+ * <tt>BleedingWounds</tt>. As blood volume drops, the overall ability to 
+ * restore stamina drops. Below a certain threshold of blood volume, blood loss
+ * itself will cause stamina loss, and below a further threshold death will
+ * occur.
+ * 
+ * <p>Blood loss from <tt>BleedingWounds</tt> varies on the severity of the
+ * wound, the bloodflow in the area of the wound, and the heartrate of the
+ * <tt>Creature</tt>.
+ * 
+ * @author stephen.ayotte
+ * @see MobileEntity
+ * @see BleedingWound
+ */
 class CreatureState extends MobileEntityState
 {    
     // bloodflow restores stamina, or drives bloodloss when there are wounds
     // bloodflow is units * heartbeats, beats are measured in bpm
     public long heartRate = 60; 
-    // HR returns to this when there's no activity;
-    // a lower resting HR gives a bigger buffer before stamina starts sapping
+    // HR returns to this when there's no activity
     public long restingHeartRate = 60;
     final public long minHeartRate = 40;
-    final public long maxHeartRate = 200;
+    final public long maxHeartRate = 180;
 
     public long bloodVolume = 1000;
     final public long maxBloodVolume = 1000;
@@ -58,7 +102,7 @@ class CreatureState extends MobileEntityState
     
     // stamina is a modifier on strength; the lower it goes, the less
     // strength is put into every action
-    // To keep things simple, this is a simple percentage:
+    // To keep things simple, this should be a simple percentage:
     //         appliedStrength = strength * (stamina / maxStamina)
     public long stamina = 1000;
     final public long maxStamina = 10000;
@@ -100,10 +144,10 @@ class Creature extends MobileEntity
     	lastTickTime = newTime;
         double heartbeatsPerMs = (double)state.heartRate / 60000;
         double heartbeats = heartbeatsPerMs * msElapsed;
-        double bloodFlow = (state.bloodVolume / state.maxBloodVolume) * 
-        					state.maxTotalBloodFlow * heartbeats;
+        double bloodFlow = ((double)state.bloodVolume / (double)state.maxBloodVolume) * 
+        					(double)state.maxTotalBloodFlow * (double)heartbeats;
         //System.out.println(self().path().name()+": handleTick(): bloodFlow = ("+state.bloodVolume+" / "+state.maxBloodVolume+") * "+state.maxTotalBloodFlow);
-        //System.out.println(self().path().name()+": handleTick(): bloodFlow: "+bloodFlow);
+        System.out.println(self().path().name()+": handleTick(): bloodFlow: "+bloodFlow);
         long newStamina = state.stamina + (long)(bloodFlow * heartbeats * state.cardioEfficiency);
         //System.out.println(self().path().name()+": handleTick(): newStamina: "+newStamina);
         if(state.stamina != newStamina &&
