@@ -44,6 +44,11 @@ class TheseAreMyExits implements Serializable
 	private static final long serialVersionUID = 1;
 	Map<Directions, ActorRef> exitRefs;
 	Map<Directions, String> exitPaths;
+	public TheseAreMyExits()
+	{
+		exitRefs = new HashMap<Directions, ActorRef>();
+		exitPaths = new HashMap<Directions, String>();
+	}
 }
 
 class RoomState implements Serializable
@@ -125,8 +130,7 @@ class Room extends UntypedActor
     	{
 //    		System.out.println(self().path().name() + ": resolving my north exit, whose path is: " + state.northExitPath);
     		try{ state.northExit = Util.resolvePathToRefSync(state.northExitPath, sys); }
-    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving north exit (path: " + state.northExitPath + "): " + e)); } 
-    				                                
+    		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving north exit (path: " + state.northExitPath + "): " + e)); }     				                                
     	}	
     	if(state.eastExitPath != null)
     	{
@@ -138,7 +142,6 @@ class Room extends UntypedActor
     	{
 //        	System.out.println(self().path().name() + ": resolving my south exit, whose path is: " + state.southExitPath);
     		try{ state.southExit = Util.resolvePathToRefSync(state.southExitPath, sys); }
-
     		catch(Exception e){ throw(new Exception(self().path().name() + ": caught exception resolving south exit (path: " + state.southExitPath + "): " + e)); } 
     	}
     	if(state.westExitPath != null)
@@ -152,14 +155,14 @@ class Room extends UntypedActor
     private void reportExits()
     {
     	TheseAreMyExits response = new TheseAreMyExits();
-    	response.exitRefs.put(Directions.NORTH, state.northExit);
-    	response.exitRefs.put(Directions.EAST,  state.eastExit);
-    	response.exitRefs.put(Directions.SOUTH, state.southExit);
-    	response.exitRefs.put(Directions.WEST,  state.westExit);
-    	response.exitPaths.put(Directions.NORTH, state.northExitPath);
-    	response.exitPaths.put(Directions.EAST,  state.eastExitPath);
-    	response.exitPaths.put(Directions.SOUTH, state.southExitPath);
-    	response.exitPaths.put(Directions.WEST,  state.westExitPath);
+		response.exitRefs.put(Directions.NORTH, state.northExit);
+		response.exitRefs.put(Directions.EAST,  state.eastExit);
+		response.exitRefs.put(Directions.SOUTH, state.southExit);
+		response.exitRefs.put(Directions.WEST,  state.westExit);
+		response.exitPaths.put(Directions.NORTH, state.northExitPath);
+		response.exitPaths.put(Directions.EAST,  state.eastExitPath);
+		response.exitPaths.put(Directions.SOUTH, state.southExitPath);
+		response.exitPaths.put(Directions.WEST,  state.westExitPath);
     	getSender().tell(response, getSelf());
     }
 

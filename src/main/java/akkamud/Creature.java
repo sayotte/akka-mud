@@ -114,7 +114,6 @@ class CreatureState extends MobileEntityState
 
 abstract class Creature extends MobileEntity
 {
-    protected CreatureState state;
     protected ActorRef partialAI;
     protected long lastTickTime = System.nanoTime();
     
@@ -128,7 +127,14 @@ abstract class Creature extends MobileEntity
     public void onReceiveRecover(Object msg)
     {
         if(msg instanceof SetCreatureVitalEvent)
-            recoverSetCreatureVital((SetCreatureVitalEvent)msg);
+        	try
+        	{
+        		recoverSetCreatureVital((SetCreatureVitalEvent)msg);
+        	}
+        	catch(Exception e)
+        	{
+        		System.out.println(self().path().name()+": caught an exception while trying to recover a SetCreatureVitalEvent: "+e);
+        	}
         else
             System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
             unhandled(msg);
@@ -141,6 +147,7 @@ abstract class Creature extends MobileEntity
     }
 	private void updateStamina()
 	{
+		CreatureState state = getState();
         // Stamina is restored by bloodflow; a standard human flows 43 units
         // per heartbeat, but we step it down if they've lost a lot of blood:
     	long newTime = System.nanoTime();
@@ -163,6 +170,7 @@ abstract class Creature extends MobileEntity
 	}
     private void updateHeartrate()
     {
+    	CreatureState state = getState();
         // Heartrate climbs and falls based on stamina remaining:
         double remainingStaminaPct = 1.0 - ((double)state.stamina / (double)state.maxStamina);
         //System.out.println(self().path().name()+": handleTick(): remainingStaminaPct: "+remainingStaminaPct);
@@ -192,8 +200,9 @@ abstract class Creature extends MobileEntity
     private Procedure<SetCreatureVitalEvent> setVitalProc =
         new Procedure<SetCreatureVitalEvent>()
         {
-            public void apply(SetCreatureVitalEvent evt)
+            public void apply(SetCreatureVitalEvent evt) throws Exception
             {
+            	CreatureState state = getState(); 
                 // HEARTRATE, RESTINGHEARTRATE, BLOODVOLUME, STAMINA
                 switch(evt.which)
                 {
@@ -212,10 +221,13 @@ abstract class Creature extends MobileEntity
                         state.stamina = evt.longval;
                         break;
                 }
+                setState(state);
             }
         };
     private void recoverSetCreatureVital(SetCreatureVitalEvent evt)
+    throws Exception
     {
+    	CreatureState state = this.getState();
         switch(evt.which)
         {
             case HEARTRATE:
@@ -231,6 +243,7 @@ abstract class Creature extends MobileEntity
                 state.stamina = evt.longval;
                 break;
         }
+        this.setState(state);
     }
 }
 

@@ -51,6 +51,19 @@ class Human extends Creature
 {
 	private boolean moving;
 	private boolean busy;
+	private HumanState state;
+	
+	@Override
+	protected <T extends MobileEntityState> T getState(){ return (T)state; }
+	@Override
+	protected <T extends MobileEntityState> void setState(T newState)
+	throws Exception
+	{
+		if(!(newState instanceof HumanState))
+			throw(new Exception("setState() called with object not an instance of HumanState; actually instance of "+state.getClass().getName()));
+		state = (HumanState)newState;
+	}
+	
 	public Human()
 	{
 		this.state = new HumanState();

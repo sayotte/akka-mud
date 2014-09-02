@@ -41,16 +41,18 @@ abstract class MobileEntity extends UntypedPersistentActor
     @Override
     public String persistenceId() { return this.self().path().name(); }
 
-    protected MobileEntityState state;
-    
-    protected final Cancellable tick = getContext().system().scheduler().schedule(
+    // Concrete member variables
+    private ActorRef currentRoom = null;
+    private final Cancellable tick = getContext().system().scheduler().schedule(
 		Duration.create(0,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
 		Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
 		getSelf(), "tick", getContext().dispatcher(), null);
 
-    @Override
-    public void postStop(){ tick.cancel(); }
+    // Accessors instead of abstract member variables, stupid Java.
+    abstract protected <T extends MobileEntityState> T getState();
+    abstract protected <T extends MobileEntityState> void setState(T newState) throws Exception;
     
+    // Supervision bits
     private final Function<Throwable, Directive> decider = 
         new Function<Throwable, Directive>()
         {
@@ -95,28 +97,41 @@ abstract class MobileEntity extends UntypedPersistentActor
     @Override
     public void onReceiveRecover(Object msg)
     {
-        System.out.println(self().path().name() + ": recovering...");
+        System.out.println(self().path().name() + ": recovering, msg is of type "+ msg.getClass().getName());
         if(msg instanceof SetRoomEvent)
         	recoverSetRoom((SetRoomEvent)msg);
         else if(msg instanceof SnapshotOffer)
-            state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
+        {
+        	try
+        	{
+		    	MobileEntityState state;
+		        state = (MobileEntityState)((SnapshotOffer)msg).snapshot();
+		        setState(state);
+        	}
+        	catch(Exception e)
+        	{
+        		System.out.println(self().path().name()+": caught an exception while trying to recover a SnapshotOffer: "+e);
+        	}
+        }
         else
         {
     	  System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
           unhandled(msg);
         }
     }
-    // This one is used for sync application of events during recovery
-
-    private ActorRef currentRoom = null; 
+    @Override
+    public void postStop(){ tick.cancel(); }
+ 
 	private Procedure<SetRoomEvent> setRoomProc =
 		new Procedure<SetRoomEvent>()
 		{
-			public void apply(SetRoomEvent evt)
+			public void apply(SetRoomEvent evt) throws Exception
 			{
-				System.out.println(self().path().name()+": setRoomProc(): evt: "+evt);
-				System.out.println(self().path().name()+": setRoomProc(): state: "+state);
+				//System.out.println(self().path().name()+": setRoomProc(): evt: "+evt);
+				//System.out.println(self().path().name()+": setRoomProc(): state: "+state);
+				MobileEntityState state = getState();
 				state.roomPath = evt.roomPath;
+				setState(state);
 			}
 		};
 	private void recoverSetRoom(SetRoomEvent evt)
@@ -136,9 +151,15 @@ abstract class MobileEntity extends UntypedPersistentActor
 				System.out.println(self().path().name() + ": exception recovering room:" + e);
 			joinedRoom = enterPurgatory();
 		}
-		finally
+		try
 		{
+			MobileEntityState state = this.getState();
 			state.roomPath = joinedRoom.path();
+			this.setState(state);
+		}
+		catch(Exception e)
+		{
+			System.out.println(self().path().name()+": caught an exception while trying to recover a SetRoomEvent: "+e);
 		}
 	}
 	private void setRoom(ActorPath roomPath)
