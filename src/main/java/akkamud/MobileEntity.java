@@ -43,10 +43,17 @@ abstract class MobileEntity extends UntypedPersistentActor
 
     // Concrete member variables
     private ActorRef currentRoom = null;
-    private final Cancellable tick = getContext().system().scheduler().schedule(
-		Duration.create(0,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
-		Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
-		getSelf(), "tick", getContext().dispatcher(), null);
+    private final Cancellable tick;
+    
+    // Constructor
+    public MobileEntity()
+    {
+    	System.out.println(self().path().name()+": MobileEntity constructor called");
+    	tick = getContext().system().scheduler().schedule(
+    			Duration.create(1000,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
+    			Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
+    			getSelf(), "tick", getContext().dispatcher(), null);
+    }
 
     // Accessors instead of abstract member variables, stupid Java.
     abstract protected <T extends MobileEntityState> T getState();

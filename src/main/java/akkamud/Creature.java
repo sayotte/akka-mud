@@ -142,6 +142,7 @@ abstract class Creature extends MobileEntity
     
     protected void handleTick() throws Exception
     {
+    	System.out.println(self().path().name()+": handleTick()...");
     	updateStamina();
     	updateHeartrate();
     }
@@ -178,13 +179,12 @@ abstract class Creature extends MobileEntity
         //System.out.println(self().path().name()+": handleTick(): heartRateSpread: "+heartRateSpread);
         long newHeartRate = state.restingHeartRate + 
         					(long)((heartRateSpread * remainingStaminaPct) * 2);
-        if(state.heartRate != newHeartRate && 
-           newHeartRate >= state.minHeartRate)
-        {
-        	if(newHeartRate > state.maxHeartRate)
-        		newHeartRate = state.maxHeartRate;
+        if(newHeartRate > state.maxHeartRate)
+    		newHeartRate = state.maxHeartRate;
+        else if(newHeartRate < state.minHeartRate)
+        	newHeartRate = state.minHeartRate;
+        if(state.heartRate != newHeartRate)
         	setCreatureVital(CreatureVitalSelector.HEARTRATE, newHeartRate);
-        }
         //System.out.println(self().path().name()+": handleTick(): newHeartRate: "+newHeartRate);
         //System.out.println("");
     }

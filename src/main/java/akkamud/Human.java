@@ -77,7 +77,8 @@ class Human extends Creature
 	{
 		if(command.equals("tick"))
 			handleTick();
-		super.onReceiveCommand(command);
+		else
+			super.onReceiveCommand(command);
 	}
 	
 	protected void handleTick()
