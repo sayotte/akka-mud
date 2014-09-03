@@ -89,7 +89,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 3; i++)
+		    for(i = 0; i < 1; i++)
 		    {
 		    	ActorRef child = this.getContext().actorOf(Props.create(Human.class),
 		                "mobile" + Integer.toString(i));
@@ -104,7 +104,7 @@ class MobileSupervisor extends UntypedActor
         }
         catch(Exception e)
         {
-            System.out.println("FATAL: ReportingOneForOneStrategy.handleFailure() caught Exception, TERMINATING SYSTEM IMMEDIATELY. Exception follows: " + e);
+            System.out.println(self().path().name()+".launchChildren(): caught Exception, TERMINATING SYSTEM IMMEDIATELY. Exception follows: " + e);
             this.getContext().system().shutdown();
         }
     }

@@ -25,7 +25,9 @@ class EntityCommand
     public static final class MoveToRoom implements Serializable
     {
     	public ActorRef room;
-    	public MoveToRoom(ActorRef destRoom){ room = destRoom; }
+    	public boolean synchronous;
+    	public MoveToRoom(ActorRef destRoom){ room = destRoom; synchronous = true; }
+    	public MoveToRoom(ActorRef destRoom, boolean sync){ room = destRoom; synchronous = sync; }
     }
     public static final class MoveAllChildrenToRoom implements Serializable
     {

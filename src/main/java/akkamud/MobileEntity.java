@@ -21,6 +21,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.Future;
 import scala.concurrent.Await;
 import static akka.actor.SupervisorStrategy.restart;
+import static akkamud.CommonCommands.*;
 import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
 
@@ -208,7 +209,7 @@ abstract class MobileEntity extends UntypedPersistentActor
     		return null;
     	}
     }
-    private void moveToRoom(MoveToRoom cmd)
+    protected void moveToRoom(MoveToRoom cmd)
     {
     	// Moving room-to-room is not atomic; we must have one foot in each
     	// room at some point. We model this by entering the new room before
@@ -225,7 +226,8 @@ abstract class MobileEntity extends UntypedPersistentActor
 		setRoom(joinedRoom.path());
     	if(oldRoom != null)
     		leaveRoom(oldRoom);
-    	getSender().tell(new Object(), self());
+    	if(cmd.synchronous == true)
+    		getSender().tell(new PassFail(true), getSelf());
     }
     private void leaveRoom(ActorRef room)
     {

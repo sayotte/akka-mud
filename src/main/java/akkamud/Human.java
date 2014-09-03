@@ -7,6 +7,10 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.ArrayList;
 
+import static akkamud.EntityCommand.*;
+import static akkamud.CreatureCommands.*;
+import static akkamud.CommonCommands.*;
+
 class HumanState extends CreatureState
 {
 	public double leftArmCond = 100.0;
@@ -47,12 +51,14 @@ class HumanState extends CreatureState
 	}
 }
 
-class Human extends Creature
+final class Human extends Creature
 {
-	private boolean moving;
-	private boolean busy;
+	// private member variables
+	private long movingUntilMS;
+	private long busyUntilMS;
 	private HumanState state;
 	
+	// accessors, because we don't have abstract member variables in Java
 	@Override
 	protected <T extends MobileEntityState> T getState(){ return (T)state; }
 	@Override
@@ -64,35 +70,70 @@ class Human extends Creature
 		state = (HumanState)newState;
 	}
 	
+	// constructor
 	public Human()
 	{
 		this.state = new HumanState();
 		this.partialAI = getContext().actorOf(Props.create(PartialAI.class), "partialAI");
-		moving = false;
-		busy = false;
+		movingUntilMS = 0;
+		busyUntilMS = 0;
 	}
 	
+	// Akka Actor bits
 	public void onReceiveCommand(Object command)
 	throws Exception
 	{
+		long nowMS = System.nanoTime() / 1000000;
+		System.out.println(self().path().name()+".Human: received message @ "+nowMS+"ms: "+command);
 		if(command.equals("tick"))
 			handleTick();
+		else if(command instanceof AmbulateToRoom)
+			handleAmbulation(command);
 		else
 			super.onReceiveCommand(command);
 	}
 	
+	// Implementation methods
+	@Override
 	protected void handleTick()
 	throws Exception
 	{
-		if(moving != true)
+		long nowMS = System.nanoTime() / 1000000;
+		System.out.println(self().path().name()+".Human.handleTick(): @ "+nowMS+"ms");
+		if(nowMS >= movingUntilMS)
 			partialAI.tell(new RequestMovementInstructions(), getSelf());
-		if(busy != true)
+		if(nowMS >= busyUntilMS)
 			partialAI.tell(new RequestActionInstructions(), getSelf());
 		super.handleTick();
 	}
-	
 	protected List<BleedingWound> getWounds()
 	{
 		return null;
+	}
+
+	private void handleAmbulation(Object cmd)
+	throws Exception
+	{
+		final long nowMS = System.nanoTime() / 1000000;
+		if(nowMS <= this.movingUntilMS)
+		{
+			getSender().tell(new PassFail(false), getSelf());
+			return;
+		}
+
+		long delayMS;
+		if(cmd instanceof WalkToRoom)
+			delayMS = 4000;
+		else if(cmd instanceof JogToRoom)
+			delayMS = 2000;
+		else if(cmd instanceof RunToRoom)
+			delayMS = 1000;
+		else
+			throw(new Exception("Unrecognized subclass of AmbulateToRoom:"+cmd));
+		this.movingUntilMS = (System.nanoTime() / 1000000) + delayMS;
+		
+		ActorRef room = ((AmbulateToRoom)cmd).room;
+		moveToRoom(new MoveToRoom(room, false));
+		getSender().tell(new PassFail(true), getSelf());
 	}
 }

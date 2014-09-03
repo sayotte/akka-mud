@@ -102,7 +102,7 @@ class Room extends UntypedActor
     
     private void addEntity(ActorRef who)
     {
-    	System.out.println(self().path().name() + ": adding " + who.path().name());
+    	//System.out.println(self().path().name() + ": adding " + who.path().name());
         router = router.addRoutee(who);
         getContext().watch(who);
         getSender().tell(new Object(), getSelf());
@@ -110,7 +110,7 @@ class Room extends UntypedActor
     }
     private void remEntity(ActorRef who)
     {
-    	System.out.println(self().path().name() + ": removing " + who.path().name());
+    	//System.out.println(self().path().name() + ": removing " + who.path().name());
         router = router.removeRoutee(who);
         getContext().unwatch(who);
 //        router.route(new AnnounceRoomExit(who), who);
