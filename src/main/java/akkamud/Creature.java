@@ -142,7 +142,7 @@ abstract class Creature extends MobileEntity
     
     protected void handleTick() throws Exception
     {
-    	System.out.println(self().path().name()+": handleTick()...");
+//    	System.out.println(self().path().name()+": handleTick()...");
     	updateStamina();
     	updateHeartrate();
     }
