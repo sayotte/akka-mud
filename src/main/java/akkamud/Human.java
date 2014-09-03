@@ -84,7 +84,7 @@ final class Human extends Creature
 	throws Exception
 	{
 		long nowMS = System.nanoTime() / 1000000;
-		System.out.println(self().path().name()+".Human: received message @ "+nowMS+"ms: "+command);
+		//System.out.println(self().path().name()+".Human: received message @ "+nowMS+"ms: "+command);
 		if(command.equals("tick"))
 			handleTick();
 		else if(command instanceof AmbulateToRoom)
@@ -99,7 +99,7 @@ final class Human extends Creature
 	throws Exception
 	{
 		long nowMS = System.nanoTime() / 1000000;
-		System.out.println(self().path().name()+".Human.handleTick(): @ "+nowMS+"ms");
+		//System.out.println(self().path().name()+".Human.handleTick(): @ "+nowMS+"ms");
 		if(nowMS >= movingUntilMS)
 			partialAI.tell(new RequestMovementInstructions(), getSelf());
 		if(nowMS >= busyUntilMS)
@@ -122,15 +122,38 @@ final class Human extends Creature
 		}
 
 		long delayMS;
+		long staminaTax;
+		String movementDesc;
 		if(cmd instanceof WalkToRoom)
-			delayMS = 4000;
+		{
+			movementDesc = "walk";
+			delayMS = 3000;
+			staminaTax = 90; 
+		}
 		else if(cmd instanceof JogToRoom)
-			delayMS = 2000;
+		{
+			movementDesc = "jogg";
+			delayMS = 1500;
+			staminaTax = 120;
+		}
 		else if(cmd instanceof RunToRoom)
-			delayMS = 1000;
+		{
+			movementDesc = "runn";
+			delayMS = 750;
+			staminaTax = 140;
+		}
 		else
 			throw(new Exception("Unrecognized subclass of AmbulateToRoom:"+cmd));
 		this.movingUntilMS = (System.nanoTime() / 1000000) + delayMS;
+		
+		if((state.stamina - staminaTax) <= 0)
+		{
+			System.out.println(self().path().name()+": panting with exhaustion instead of "+movementDesc+"ing to another room!");
+			getSender().tell(new PassFail(false), getSelf());
+			return;
+		}
+		System.out.println(self().path().name()+": "+movementDesc+"ning to another room");
+		setCreatureVital(CreatureVitalSelector.STAMINA, state.stamina - staminaTax);
 		
 		ActorRef room = ((AmbulateToRoom)cmd).room;
 		moveToRoom(new MoveToRoom(room, false));

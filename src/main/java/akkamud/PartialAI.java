@@ -24,7 +24,7 @@ class PartialAI extends UntypedActor
 	throws Exception
 	{
 		long nowMS = System.nanoTime() / 1000000;
-		System.out.println(self().path().name()+".PartialAI: received message @ "+nowMS+"ms: "+message);
+		//System.out.println(self().path().name()+".PartialAI: received message @ "+nowMS+"ms: "+message);
 		if(message instanceof RequestMovementInstructions)
 			sendMovementInstructions();
 		else if(message instanceof RequestActionInstructions)
@@ -64,10 +64,11 @@ class PartialAI extends UntypedActor
 			System.out.println(self().path().name()+": can't figure out where to go based on exits available, not moving");
 			return;
 		}
+//		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
 		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
 		final PassFail response;
 		response = (PassFail)Await.result(moveReq, Duration.create(40, TimeUnit.MILLISECONDS));
-		System.out.println(self().path().name()+": response status of request to move: "+response.status);
+		//System.out.println(self().path().name()+": response status of request to move: "+response.status);
 	}
 	private void sendActionInstructions()
 	{

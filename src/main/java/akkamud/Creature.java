@@ -120,7 +120,7 @@ abstract class Creature extends MobileEntity
     public void onReceiveCommand(Object command) throws Exception
     {
     	long nowMS = System.nanoTime() / 1000000;
-		System.out.println(self().path().name()+".Creature: received message @ "+nowMS+"ms: "+command);
+		//System.out.println(self().path().name()+".Creature: received message @ "+nowMS+"ms: "+command);
         if(command.equals("tick"))
         	handleTick();
         else
@@ -145,7 +145,7 @@ abstract class Creature extends MobileEntity
     protected void handleTick() throws Exception
     {
     	long nowMS = System.nanoTime() / 1000000;
-    	System.out.println(self().path().name()+".Creature.handleTick(): @ "+nowMS+"ms");
+    	//System.out.println(self().path().name()+".Creature.handleTick(): @ "+nowMS+"ms");
     	updateStamina();
     	updateHeartrate();
     }
@@ -193,7 +193,7 @@ abstract class Creature extends MobileEntity
     }
     abstract List<BleedingWound> getWounds(); 
 
-    private void setCreatureVital(CreatureVitalSelector which, long newVal)
+    protected void setCreatureVital(CreatureVitalSelector which, long newVal)
     {
     	SetCreatureVitalEvent evt = new SetCreatureVitalEvent();
     	evt.which = which;
@@ -210,7 +210,7 @@ abstract class Creature extends MobileEntity
                 switch(evt.which)
                 {
                     case HEARTRATE:
-                    	//System.out.println(self().path().name()+": persisting heartrate as "+evt.longval);
+                    	System.out.println(self().path().name()+": persisting heartrate as "+evt.longval);
                         state.heartRate = evt.longval;
                         break;
                     case RESTINGHEARTRATE:
@@ -220,7 +220,7 @@ abstract class Creature extends MobileEntity
                         state.bloodVolume = evt.longval;
                         break;
                     case STAMINA:
-                    	//System.out.println(self().path().name()+": persisting stamina as "+evt.longval);
+                    	System.out.println(self().path().name()+": persisting stamina as "+evt.longval);
                         state.stamina = evt.longval;
                         break;
                 }

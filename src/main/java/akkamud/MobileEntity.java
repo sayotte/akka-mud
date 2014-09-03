@@ -52,7 +52,7 @@ abstract class MobileEntity extends UntypedPersistentActor
     	System.out.println(self().path().name()+": MobileEntity constructor called");
     	tick = getContext().system().scheduler().schedule(
     			Duration.create(1000,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
-    			Duration.create(1000, TimeUnit.MILLISECONDS), // frequency
+    			Duration.create(100, TimeUnit.MILLISECONDS), // frequency
     			getSelf(), "tick", getContext().dispatcher(), null);
     }
 
