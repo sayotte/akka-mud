@@ -2,6 +2,8 @@ package akkamud;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.List;
+import java.util.ArrayList;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorPath;
@@ -13,7 +15,8 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.Future;
 import scala.concurrent.Await;
 
-public class Util {
+public class Util
+{
 	public static final class ActorPathResolutionException extends Exception 
 	{
 		public ActorPathResolutionException(Throwable t){ super(t); }
@@ -46,4 +49,37 @@ public class Util {
 //		catch(TimeoutException e){ throw(new ActorPathResolutionException(e)); }
 //		finally{ return ref; }
 	}
+}
+
+class ObjectRingBuffer
+{
+	private int size;
+	private int index;
+	private Object[] buf;
+	public ObjectRingBuffer(int newSize)
+	{
+		size = newSize;
+		index = 0;
+		buf = new Object[size];
+	}
+	public void add(Object obj)
+	{
+		buf[index] = obj;
+		index++;
+		if(index >= size)
+			index = 0;
+	}
+	public ArrayList<Object> getContents()
+	{
+		ArrayList<Object> ret = new ArrayList<Object>();
+		int i, accum;
+		for(i = index, accum = 0; accum < size; i++, accum++)
+		{
+			if(i >= size)
+				i = 0;
+			ret.add(buf[i]);
+		}
+		return ret;
+	}
+	
 }

@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.Duration.Infinite;
 import scala.concurrent.Future;
 
 import akka.actor.ActorRef;
@@ -38,7 +39,8 @@ class PartialAI extends UntypedActor
 	{
 		final Object exitsResponse;
 		final Future<Object> exitReq = Patterns.ask(getSender(), new WhatAreYourExits(), 10);
-		exitsResponse = Await.result(exitReq, Duration.create(10, TimeUnit.MILLISECONDS));
+		//exitsResponse = Await.result(exitReq, Duration.create(10, TimeUnit.MILLISECONDS));
+		exitsResponse = Await.result(exitReq, Duration.create("Inf"));
 		if(! (exitsResponse instanceof TheseAreMyExits))
 		{
 			System.out.println(self().path().name()+": got an empty answer to WhatAreYourExits, doing nothing");

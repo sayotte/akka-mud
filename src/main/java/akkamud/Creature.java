@@ -117,14 +117,14 @@ abstract class Creature extends MobileEntity
     protected ActorRef partialAI;
     protected long lastTickTime = System.nanoTime();
     
-    public void onReceiveCommand(Object command) throws Exception
+    protected void handleCommand(Object command) throws Exception
     {
     	long nowMS = System.nanoTime() / 1000000;
 		//System.out.println(self().path().name()+".Creature: received message @ "+nowMS+"ms: "+command);
         if(command.equals("tick"))
         	handleTick();
         else
-            super.onReceiveCommand(command);
+            super.handleCommand(command);
     }
     public void onReceiveRecover(Object msg)
     {
@@ -210,7 +210,7 @@ abstract class Creature extends MobileEntity
                 switch(evt.which)
                 {
                     case HEARTRATE:
-                    	System.out.println(self().path().name()+": persisting heartrate as "+evt.longval);
+                    	//System.out.println(self().path().name()+": persisting heartrate as "+evt.longval);
                         state.heartRate = evt.longval;
                         break;
                     case RESTINGHEARTRATE:
@@ -220,7 +220,7 @@ abstract class Creature extends MobileEntity
                         state.bloodVolume = evt.longval;
                         break;
                     case STAMINA:
-                    	System.out.println(self().path().name()+": persisting stamina as "+evt.longval);
+                    	//System.out.println(self().path().name()+": persisting stamina as "+evt.longval);
                         state.stamina = evt.longval;
                         break;
                 }

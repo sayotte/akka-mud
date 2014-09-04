@@ -37,6 +37,7 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
           </executableDependency>
+          <argument>-Xms200m</argument>
         </configuration>
         <dependencies>
           <dependency>

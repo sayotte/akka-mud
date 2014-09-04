@@ -34,7 +34,7 @@ class SetRoomEvent implements Serializable
 {
 	public final ActorPath roomPath;
 	SetRoomEvent(ActorPath newRoom){ roomPath = newRoom; }
-}	
+}
 
 abstract class MobileEntity extends UntypedPersistentActor
 {
@@ -45,6 +45,7 @@ abstract class MobileEntity extends UntypedPersistentActor
     // Concrete member variables
     private ActorRef currentRoom = null;
     private final Cancellable tick;
+    private ObjectRingBuffer journal;
     
     // Constructor
     public MobileEntity()
@@ -54,11 +55,13 @@ abstract class MobileEntity extends UntypedPersistentActor
     			Duration.create(1000,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
     			Duration.create(100, TimeUnit.MILLISECONDS), // frequency
     			getSelf(), "tick", getContext().dispatcher(), null);
+    	journal = new ObjectRingBuffer(20);
     }
 
     // Accessors instead of abstract member variables, stupid Java.
     abstract protected <T extends MobileEntityState> T getState();
     abstract protected <T extends MobileEntityState> void setState(T newState) throws Exception;
+    protected ObjectRingBuffer getJournal(){ return journal; }
     
     // Supervision bits
     private final Function<Throwable, Directive> decider = 
@@ -80,7 +83,23 @@ abstract class MobileEntity extends UntypedPersistentActor
     
     //// The reactive model!
     // First the definition for "normal" operations
-    public void onReceiveCommand(Object command) throws Exception
+	public void onReceiveCommand(Object command) throws Exception
+	{
+		//System.out.println(self().path().name()+".Human.onReceiveCommand(): "+command);
+		this.journal.add(command);
+		try{ handleCommand(command); }
+		catch(Exception e)
+		{
+			System.out.println(self().path().name()+".MobileEntity.onReceiveCommand(): caught an exception, dumping recent messages before re-throwing:");
+			int i = 0;
+			for(Object obj: this.journal.getContents())
+			{
+				System.out.println(i+": "+obj);
+				i++;
+			}
+		}
+	}
+    protected void handleCommand(Object command) throws Exception
     {
 //    	System.out.println(self().path().name() + ": received message: "+command);
         if(command instanceof AnnounceYourself)

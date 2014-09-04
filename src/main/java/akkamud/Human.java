@@ -80,7 +80,7 @@ final class Human extends Creature
 	}
 	
 	// Akka Actor bits
-	public void onReceiveCommand(Object command)
+	protected void handleCommand(Object command)
 	throws Exception
 	{
 		long nowMS = System.nanoTime() / 1000000;
@@ -90,7 +90,7 @@ final class Human extends Creature
 		else if(command instanceof AmbulateToRoom)
 			handleAmbulation(command);
 		else
-			super.onReceiveCommand(command);
+			super.handleCommand(command);
 	}
 	
 	// Implementation methods

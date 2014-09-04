@@ -89,7 +89,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 1; i++)
+		    for(i = 0; i < 3; i++)
 		    {
 		    	ActorRef child = this.getContext().actorOf(Props.create(Human.class),
 		                "mobile" + Integer.toString(i));
@@ -121,8 +121,8 @@ class MobileSupervisor extends UntypedActor
         System.out.println(self().path().name() + ": restarting children!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
-            //child.tell(new RestartYourself(), this.self());
-        	child.tell(akka.actor.Kill.getInstance(), this.self());
+            child.tell(new RestartYourself(), this.self());
+        	//child.tell(akka.actor.Kill.getInstance(), this.self());
         }
     }
     private void setDefaultRoom(SetDefaultRoom msg)
