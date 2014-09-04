@@ -17,6 +17,8 @@ import akka.actor.OneForOneStrategy;
 
 import java.sql.SQLException;
 
+//import java.io.StringWriter;
+
 // import scala.collection.Iterator;
 import scala.collection.JavaConversions;
 import scala.concurrent.duration.Duration;
@@ -69,6 +71,7 @@ class MobileSupervisor extends UntypedActor
     public void onReceive(Object message)
     throws Exception
     {
+    	System.out.println(self().path().name()+".onReceive(): received message: "+message);
         if(message instanceof StartChildren)
             launchChildren();
         else if(message instanceof ReportChildren)
@@ -89,7 +92,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 3; i++)
+		    for(i = 0; i < 2; i++)
 		    {
 		    	ActorRef child = this.getContext().actorOf(Props.create(Human.class),
 		                "mobile" + Integer.toString(i));
@@ -98,13 +101,15 @@ class MobileSupervisor extends UntypedActor
 		    for(ActorRef child: JavaConversions.asJavaIterable(getContext().children()))
 		    {
 		    	Future<Object> f = Patterns.ask(child, new MoveToRoom(defaultRoom), 100);
-		    	Await.ready(f, Duration.create(100, "millis"));
+		    	Await.ready(f, Duration.create(1000, "millis"));
 		    }
 		    getSender().tell(new Object(), self());
         }
         catch(Exception e)
         {
             System.out.println(self().path().name()+".launchChildren(): caught Exception, TERMINATING SYSTEM IMMEDIATELY. Exception follows: " + e);
+            System.out.println(self().path().name()+".launchChildren(): stack trace: ");
+            e.printStackTrace(System.out);
             this.getContext().system().shutdown();
         }
     }
@@ -121,6 +126,7 @@ class MobileSupervisor extends UntypedActor
         System.out.println(self().path().name() + ": restarting children!");
         for(ActorRef child: JavaConversions.asJavaIterable(this.getContext().children()))
         {
+        	System.out.println(self().path().name()+".restartChildren(): restarting "+child.path().name());
             child.tell(new RestartYourself(), this.self());
         	//child.tell(akka.actor.Kill.getInstance(), this.self());
         }

@@ -11,8 +11,9 @@ import akka.actor.Terminated;
 import akka.actor.SupervisorStrategy;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.pattern.Patterns;
-import akka.persistence.UntypedPersistentActor;
+import akka.persistence.RecoveryCompleted;
 import akka.persistence.SnapshotOffer;
+import akka.persistence.UntypedPersistentActor;
 import akka.japi.Function;
 import akka.japi.Procedure;
 import akkamud.reporting.ReportingOneForOneStrategy;
@@ -60,7 +61,7 @@ abstract class MobileEntity extends UntypedPersistentActor
 
     // Accessors instead of abstract member variables, stupid Java.
     abstract protected <T extends MobileEntityState> T getState();
-    abstract protected <T extends MobileEntityState> void setState(T newState) throws Exception;
+    abstract protected <T extends MobileEntityState> void setState(T newState) throws IllegalArgumentException;
     protected ObjectRingBuffer getJournal(){ return journal; }
     
     // Supervision bits
@@ -97,6 +98,7 @@ abstract class MobileEntity extends UntypedPersistentActor
 				System.out.println(i+": "+obj);
 				i++;
 			}
+			throw e;
 		}
 	}
     protected void handleCommand(Object command) throws Exception
@@ -123,10 +125,13 @@ abstract class MobileEntity extends UntypedPersistentActor
     // Now the definition for "recovery" operations (we've been restarted)
     @Override
     public void onReceiveRecover(Object msg)
+	throws IllegalArgumentException, ActorPathResolutionException, Exception
     {
-        System.out.println(self().path().name() + ": recovering, msg is of type "+ msg.getClass().getName());
+        //System.out.println(self().path().name() + ": recovering, msg is of type "+ msg.getClass().getName());
         if(msg instanceof SetRoomEvent)
         	recoverSetRoom((SetRoomEvent)msg);
+        else if(msg instanceof RecoveryCompleted)
+        	completeRecovery();
         else if(msg instanceof SnapshotOffer)
         {
         	try
@@ -138,6 +143,7 @@ abstract class MobileEntity extends UntypedPersistentActor
         	catch(Exception e)
         	{
         		System.out.println(self().path().name()+": caught an exception while trying to recover a SnapshotOffer: "+e);
+        		throw(e);
         	}
         }
         else
@@ -145,6 +151,31 @@ abstract class MobileEntity extends UntypedPersistentActor
     	  System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
           unhandled(msg);
         }
+    }
+    private void completeRecovery() throws ActorPathResolutionException, Exception
+    {
+    	ActorRef roomWeWereInBeforeRestart;
+		MobileEntityState state = this.getState();
+
+		// if this is a brand-new entity, it will have no roomPath set by
+		// its initial no-op recovery
+		if(state.roomPath != null)
+		{
+			try
+			{
+				roomWeWereInBeforeRestart = Util.resolvePathToRefSync(state.roomPath, getContext().system());
+				if(! roomWeWereInBeforeRestart.equals(this.currentRoom))
+				{
+					System.out.println(self().path().name()+".MobileEntity.completeRecovery(): entering room: "+state.roomPath);
+					enterRoom(roomWeWereInBeforeRestart);
+				}
+			}
+			catch(ActorPathResolutionException e)
+			{
+				System.out.println(self().path().name() + ": failed to resolve room?: " + e);
+				enterPurgatory(); // may throw an exception
+			}
+		}
     }
     @Override
     public void postStop(){ tick.cancel(); }
@@ -161,40 +192,19 @@ abstract class MobileEntity extends UntypedPersistentActor
 				setState(state);
 			}
 		};
-	private void recoverSetRoom(SetRoomEvent evt)
+	private void recoverSetRoom(SetRoomEvent evt) throws IllegalArgumentException
 	{
-		System.out.println(self().path().name() + ": recovering by setting room");
-		ActorRef joinedRoom = null;
-		try
-		{
-			ActorRef recoveredRoom = Util.resolvePathToRefSync(evt.roomPath, getContext().system());
-			joinedRoom = enterRoom(recoveredRoom);
-		}
-		catch(Exception e)
-		{
-			if(e instanceof ActorPathResolutionException)
-				System.out.println(self().path().name() + ": failed to resolve room?: " + e);
-			else
-				System.out.println(self().path().name() + ": exception recovering room:" + e);
-			joinedRoom = enterPurgatory();
-		}
-		try
-		{
-			MobileEntityState state = this.getState();
-			state.roomPath = joinedRoom.path();
-			this.setState(state);
-		}
-		catch(Exception e)
-		{
-			System.out.println(self().path().name()+": caught an exception while trying to recover a SetRoomEvent: "+e);
-		}
+		System.out.println(self().path().name() + ".MobileEntity.recoverSetRoom(): ...");
+		MobileEntityState state = this.getState();
+		state.roomPath = evt.roomPath;
+		this.setState(state);
 	}
 	private void setRoom(ActorPath roomPath)
 	{
 		SetRoomEvent evt = new SetRoomEvent(roomPath);
 		persist(evt, setRoomProc);
 	}
-	private ActorRef enterRoom(ActorRef room)
+	private void enterRoom(ActorRef room)
     {
     	try
     	{
@@ -203,30 +213,35 @@ abstract class MobileEntity extends UntypedPersistentActor
         	getContext().watch(room);
         	this.currentRoom = room;
     	}
+    	// FIXME XXX
     	catch(Exception e)
     	{
     		System.out.println(self().path().name() + ": caught an exception trying to enter a room: " + e);
     		System.out.println(self().path().name() + ": moving to Purgatory!");
-    		this.currentRoom = enterPurgatory();
+    		try{ enterPurgatory(); } // sets this.currentRoom
+    		// FIXME XXX
+    		catch(ActorPathResolutionException e2){ ; } 
     	}
-    	return this.currentRoom;
     }
-    private ActorRef enterPurgatory()
+    private void enterPurgatory() throws ActorPathResolutionException
     {
-    	// Entering Purgatory *must* succeed since it's a fallback, so we catch all exceptions
     	try
     	{
 	    	ActorRef purgatory = 
-	    		Util.resolvePathToRefSync(Purgatory.purgatoryPathString, 
-	    								  getContext().system()); 
+	    		Util.resolvePathToRefSync(Purgatory.purgatoryPathString, getContext().system()); 
 	    	purgatory.tell(new AddRoomEntity(getSelf()), getSelf());
-	    	return purgatory;
+	    	this.currentRoom = purgatory;
     	}
-    	catch(Exception e)
+    	catch(ActorPathResolutionException e)
     	{
+        	// if we died entering Purgatory, it's probably time for everything to go up in smoke..
+        	// but just in case it was a timeout, let's re-throw the exception and allow the
+    		// restart functionality to re-try a few times
     		System.out.println(self().path().name() + ": HOLY CRAP, exception entering Purgatory??: " +e);
-    		return null;
+    		throw(e);
     	}
+    	// FIXME XXX
+    	catch(Exception e){ ; }
     }
     protected void moveToRoom(MoveToRoom cmd)
     {
@@ -241,8 +256,8 @@ abstract class MobileEntity extends UntypedPersistentActor
     	// delivered, waiting on administrative intervention.
     	
     	ActorRef oldRoom = currentRoom;
-    	ActorRef joinedRoom = enterRoom(cmd.room);
-		setRoom(joinedRoom.path());
+    	enterRoom(cmd.room);
+		setRoom(this.currentRoom.path());
     	if(oldRoom != null)
     		leaveRoom(oldRoom);
     	if(cmd.synchronous == true)

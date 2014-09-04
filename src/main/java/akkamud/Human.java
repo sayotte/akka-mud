@@ -63,10 +63,10 @@ final class Human extends Creature
 	protected <T extends MobileEntityState> T getState(){ return (T)state; }
 	@Override
 	protected <T extends MobileEntityState> void setState(T newState)
-	throws Exception
+	throws IllegalArgumentException
 	{
 		if(!(newState instanceof HumanState))
-			throw(new Exception("setState() called with object not an instance of HumanState; actually instance of "+state.getClass().getName()));
+			throw(new IllegalArgumentException("setState() called with object not an instance of HumanState; actually instance of "+state.getClass().getName()));
 		state = (HumanState)newState;
 	}
 	

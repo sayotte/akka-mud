@@ -21,17 +21,38 @@ class RequestActionInstructions implements Serializable {}
 
 class PartialAI extends UntypedActor
 {
+	private ObjectRingBuffer history;
+	
+	public PartialAI()
+	{
+		this.history = new ObjectRingBuffer(20);
+	}
 	public void onReceive(Object message)
 	throws Exception
 	{
-		long nowMS = System.nanoTime() / 1000000;
-		//System.out.println(self().path().name()+".PartialAI: received message @ "+nowMS+"ms: "+message);
-		if(message instanceof RequestMovementInstructions)
-			sendMovementInstructions();
-		else if(message instanceof RequestActionInstructions)
-			sendActionInstructions();
-		else
-			unhandled(message);
+		this.history.add(message);
+		try
+		{
+			long nowMS = System.nanoTime() / 1000000;
+			//System.out.println(self().path().name()+".PartialAI: received message @ "+nowMS+"ms: "+message);
+			if(message instanceof RequestMovementInstructions)
+				sendMovementInstructions();
+			else if(message instanceof RequestActionInstructions)
+				sendActionInstructions();
+			else
+				unhandled(message);
+		}
+		catch(Exception e)
+		{
+			System.out.println(self().path().name()+".partialAI.onReceiveCommand(): caught an exception, dumping recent messages before re-throwing:");
+			int i = 0;
+			for(Object obj: this.history.getContents())
+			{
+				System.out.println(i+": "+obj);
+				i++;
+			}
+			throw e;
+		}
 	}
 	
 	private void sendMovementInstructions()
@@ -67,7 +88,7 @@ class PartialAI extends UntypedActor
 			return;
 		}
 //		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
-		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
+		final Future<Object> moveReq = Patterns.ask(getSender(), new JogToRoom(dest), 10);
 		final PassFail response;
 		response = (PassFail)Await.result(moveReq, Duration.create(40, TimeUnit.MILLISECONDS));
 		//System.out.println(self().path().name()+": response status of request to move: "+response.status);

@@ -15,6 +15,8 @@ import java.util.ArrayList;
 
 import java.lang.reflect.Field;
 
+import static akkamud.Util.*;
+
 /**
  * This class represents a wound that causes blood loss with each heartbeat.
  * 
@@ -108,7 +110,7 @@ class CreatureState extends MobileEntityState
     // strength is put into every action
     // To keep things simple, this should be a simple percentage:
     //         appliedStrength = strength * (stamina / maxStamina)
-    public long stamina = 1000;
+    public long stamina = 10000;
     final public long maxStamina = 10000;
 }
 
@@ -127,6 +129,7 @@ abstract class Creature extends MobileEntity
             super.handleCommand(command);
     }
     public void onReceiveRecover(Object msg)
+	throws IllegalArgumentException, ActorPathResolutionException, Exception
     {
         if(msg instanceof SetCreatureVitalEvent)
         	try
@@ -138,8 +141,7 @@ abstract class Creature extends MobileEntity
         		System.out.println(self().path().name()+": caught an exception while trying to recover a SetCreatureVitalEvent: "+e);
         	}
         else
-            System.out.println(self().path().name() + ": unhandled recovery message: " + msg);
-            unhandled(msg);
+            super.onReceiveRecover(msg);
     }
     
     protected void handleTick() throws Exception
