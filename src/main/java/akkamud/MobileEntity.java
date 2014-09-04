@@ -112,6 +112,8 @@ abstract class MobileEntity extends UntypedPersistentActor
         	moveToRoom((MoveToRoom)command);
         else if(command instanceof Entry)
         	handleRoomEntry(((Entry)command).who);
+        else if(command instanceof Exit)
+        	handleRoomExit(((Exit)command).who);
         else if(command instanceof Terminated)
         	handleTerminated(((Terminated)command).getActor());
         else if(command instanceof WhatAreYourExits)
@@ -271,6 +273,11 @@ abstract class MobileEntity extends UntypedPersistentActor
     {
     	if(! who.equals(self()))
     		System.out.println(self().path().name()+": I see "+who.path().name()+" entering the room.");
+    }
+    private void handleRoomExit(ActorRef who)
+    {
+    	if(! who.equals(self()))
+    		System.out.println(self().path().name()+": I see "+who.path().name()+" leaving the room.");
     }
     private void handleTerminated(ActorRef who)
     {

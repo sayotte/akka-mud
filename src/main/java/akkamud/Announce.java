@@ -15,3 +15,9 @@ class Entry implements Serializable
 	public ActorRef who;
 	public Entry(ActorRef actor){ who = actor; }
 }
+
+class Exit implements Serializable
+{
+	public ActorRef who;
+	public Exit(ActorRef actor){ who = actor; }
+}
