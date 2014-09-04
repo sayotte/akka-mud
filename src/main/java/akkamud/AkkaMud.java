@@ -26,7 +26,7 @@ public class AkkaMud
         final ActorRef roomSup = system.actorOf(Props.create(RoomSupervisor.class),
         										"room-supervisor");
         long startTime = System.nanoTime();
-        Future<Object> f = Patterns.ask(roomSup,  new LoadRooms(), 100);
+        Future<Object> f = Patterns.ask(roomSup,  new LoadRooms(), 1000);
         Await.ready(f, Duration.create(5, "minutes"));
         long endTime = System.nanoTime();
         long durationMS = (endTime - startTime) / 1000000;
