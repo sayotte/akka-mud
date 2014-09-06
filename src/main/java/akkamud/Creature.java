@@ -7,7 +7,6 @@ import akka.actor.ActorRef;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.japi.Function;
 import akka.japi.Procedure;
-import akkamud.reporting.ReportingOneForOneStrategy;
 
 import java.io.Serializable;
 import java.util.List;
@@ -118,6 +117,12 @@ abstract class Creature extends MobileEntity
 {
     protected ActorRef partialAI;
     protected long lastTickTime = System.nanoTime();
+
+    public Creature(ActorRef reportLogger)
+    {
+    	super(reportLogger);
+    	//System.out.println(self().path().name()+".Creature(): constructor called with logger: "+reportLogger.path().name());
+    }
     
     protected void handleCommand(Object command) throws Exception
     {

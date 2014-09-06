@@ -71,12 +71,14 @@ final class Human extends Creature
 	}
 	
 	// constructor
-	public Human()
+	public Human(ActorRef reportLogger)
 	{
+		super(reportLogger);
+		//System.out.println(self().path().name()+".Human(): constructor called with logger: "+reportLogger.path().name());
 		this.state = new HumanState();
 		this.partialAI = getContext().actorOf(Props.create(PartialAI.class), "partialAI");
-		movingUntilMS = 0;
-		busyUntilMS = 0;
+		this.movingUntilMS = 0;
+		this.busyUntilMS = 0;
 	}
 	
 	// Akka Actor bits

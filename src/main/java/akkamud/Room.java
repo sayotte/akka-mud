@@ -114,7 +114,7 @@ class Room extends UntypedActor
         router = router.removeRoutee(who);
         getContext().unwatch(who);
 //        router.route(new AnnounceRoomExit(who), who);
-        router.route(new Exit(who), getSelf());
+        //router.route(new Exit(who), getSelf());
     }
     private void handleTerminatedEntity(ActorRef who)
     {

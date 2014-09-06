@@ -106,5 +106,17 @@ class ObjectRingBuffer
 		}
 		return ret;
 	}
+	public String toString()
+	{
+		ArrayList<Object> contents = getContents();
+		String str = ""; 
+		int i = 0;
+		for(Object obj: contents)
+		{
+			str += i+": "+obj+"\n";
+			i++;
+		}
+		return str;
+	}
 	
 }

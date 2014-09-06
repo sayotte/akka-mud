@@ -27,6 +27,8 @@ class Purgatory extends UntypedActor
 			addEntity(((AddRoomEntity)message).entity);
 		else if(message instanceof RemoveRoomEntity)
 			remEntity(((RemoveRoomEntity)message).entity);
+		else if(message instanceof WhatAreYourExits)
+			reportExits();
 		else
 			unhandled(message);
 	}
@@ -34,17 +36,20 @@ class Purgatory extends UntypedActor
     private void addEntity(ActorRef who)
     {
         router.addRoutee(who);
-        getContext().watch(who);
-        getSender().tell(new Object(), getSelf());
+//        getContext().watch(who);
     }
     private void remEntity(ActorRef who)
     {
         router.removeRoutee(who);
-        getContext().unwatch(who);
+//        getContext().unwatch(who);
     }
-    private void handleTerminatedEntity(ActorRef who)
+//    private void handleTerminatedEntity(ActorRef who)
+//    {
+//        System.out.println(self().path().name() + ": handling terminated room member");
+//        remEntity(who);
+//    }
+    private void reportExits()
     {
-        System.out.println(self().path().name() + ": handling terminated room member");
-        remEntity(who);
+    	getSender().tell(new TheseAreMyExits(), getSelf());
     }
 }

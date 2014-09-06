@@ -26,20 +26,25 @@ import akka.actor.UntypedActor;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.japi.Function;
 import akka.pattern.Patterns;
-import akkamud.reporting.ReportLogger;
-import akkamud.reporting.ReportingOneForOneStrategy;
+
 import static akkamud.EntityCommand.*;
+import static akkamud.ReportCommands.*;
 /**
  * @author stephen.ayotte
  *
  */
 class RoomSupervisor extends UntypedActor {
-	private ReportLogger logger;
+	private final ActorRef reportLogger;
+	private final SupervisorStrategy strategy;
 	
-	public RoomSupervisor()
+	public RoomSupervisor(ActorRef newReportLogger)
 	{
 		System.out.println(self().path().name() + ": running");
-		logger = ReportLogger.getLogger();
+		reportLogger = newReportLogger;
+		strategy = new ReportingOneForOneStrategy(10,                           // max retries
+                								  Duration.create(1, "minute"), // within this time period
+									              decider,                      // with this "decider" for handling
+									              this.reportLogger);
 	}
 	
     private final Function<Throwable, Directive> decider = 
@@ -51,10 +56,7 @@ class RoomSupervisor extends UntypedActor {
                 return escalate();
             }
         };
-    private final SupervisorStrategy strategy = 
-            new ReportingOneForOneStrategy(10,                           // max retries
-                                           Duration.create(1, "minute"), // within this time period
-                                           decider);                     // with this "decider" for handling
+
     @Override
     public SupervisorStrategy supervisorStrategy()
     {

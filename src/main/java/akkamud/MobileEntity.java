@@ -16,7 +16,6 @@ import akka.persistence.SnapshotOffer;
 import akka.persistence.UntypedPersistentActor;
 import akka.japi.Function;
 import akka.japi.Procedure;
-import akkamud.reporting.ReportingOneForOneStrategy;
 import scala.concurrent.duration.Duration;
 //import scala.concurrent.duration.Duration.Zero;
 import scala.concurrent.Future;
@@ -25,6 +24,7 @@ import static akka.actor.SupervisorStrategy.restart;
 import static akkamud.CommonCommands.*;
 import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
+import static akkamud.ReportCommands.*;
 
 //// State and event definitions for MobileEntity
 class MobileEntityState implements Serializable
@@ -44,19 +44,31 @@ abstract class MobileEntity extends UntypedPersistentActor
     public String persistenceId() { return this.self().path().name(); }
 
     // Concrete member variables
+    private ActorRef reportLogger;
     private ActorRef currentRoom = null;
     private final Cancellable tick;
+    private final SupervisorStrategy strategy;
     private ObjectRingBuffer journal;
     
     // Constructor
-    public MobileEntity()
+    public MobileEntity(ActorRef newReportLogger)
     {
-    	System.out.println(self().path().name()+": MobileEntity constructor called");
+    	//System.out.println(self().path().name()+": MobileEntity constructor called");
+    	
+    	reportLogger = newReportLogger; 
+    	
     	tick = getContext().system().scheduler().schedule(
     			Duration.create(1000,  TimeUnit.MILLISECONDS), //Duration.Zero, // initial delay
     			Duration.create(100, TimeUnit.MILLISECONDS), // frequency
     			getSelf(), "tick", getContext().dispatcher(), null);
+    	
     	journal = new ObjectRingBuffer(20);
+    	
+    	strategy = 
+    			new ReportingOneForOneStrategy(10,                           // max retries
+						                       Duration.create(1, "minute"), // within this time period
+						                       decider,                      // with this "decider" for handling
+						                       reportLogger);
     }
 
     // Accessors instead of abstract member variables, stupid Java.
@@ -75,10 +87,7 @@ abstract class MobileEntity extends UntypedPersistentActor
                 return restart();
             }
         };
-	private final SupervisorStrategy strategy =
-	    new ReportingOneForOneStrategy(10,                           // max retries
-	                                   Duration.create(1, "minute"), // within this time period
-	                                   decider);                     // with this "decider" for handling
+	    
 	@Override
 	public SupervisorStrategy supervisorStrategy(){ return strategy; }
     
@@ -91,14 +100,12 @@ abstract class MobileEntity extends UntypedPersistentActor
 		try{ handleCommand(command); }
 		catch(Exception e)
 		{
-			System.out.println(self().path().name()+".MobileEntity.onReceiveCommand(): caught an exception, dumping recent messages before re-throwing:");
-			int i = 0;
-			for(Object obj: this.journal.getContents())
-			{
-				System.out.println(i+": "+obj);
-				i++;
-			}
-			throw e;
+			String ext = this.journal.toString();
+			ExceptionReportEx reportable = 
+				new ExceptionReportEx(self().path().name(), e, this.journal.toString());
+			//System.out.println(self().path().name()+".MobileEntity.onReceiveCommand(): caught an exception, dumping recent messages before re-throwing:");
+			
+			throw reportable;
 		}
 	}
     protected void handleCommand(Object command) throws Exception
@@ -210,12 +217,18 @@ abstract class MobileEntity extends UntypedPersistentActor
     {
     	try
     	{
-    		final Future<Object> f = Patterns.ask(room, new AddRoomEntity(self()), 10);
-    		Await.ready(f, Duration.create(10, "millis"));
+    		final Future<Object> f = Patterns.ask(room, new AddRoomEntity(self()), 100);
+    		Await.ready(f, Duration.create(100, "millis"));
         	getContext().watch(room);
         	this.currentRoom = room;
     	}
     	// FIXME XXX
+    	// We should really just allow this exception to propagate-- throwing ourselves into
+    	// Purgatory makes the situation essentially unrecoverable.
+    	// Not that Purgatory is a bad idea by itself, but we shouldn't warp to it at the
+    	// first sign of trouble... a few restarts later, we might succeed at whatever we were
+    	// trying to do. If we end up dying an unrecoverable death, well, the MUD should
+    	// probably go down with us.
     	catch(Exception e)
     	{
     		System.out.println(self().path().name() + ": caught an exception trying to enter a room: " + e);
@@ -292,8 +305,8 @@ abstract class MobileEntity extends UntypedPersistentActor
     		return;
     	}
     	TheseAreMyExits response;
-    	final Future<Object> f = Patterns.ask(currentRoom, cmd, 10);
-    	response = (TheseAreMyExits)Await.result(f, Duration.create(10, TimeUnit.MILLISECONDS));
+    	final Future<Object> f = Patterns.ask(currentRoom, cmd, 100);
+    	response = (TheseAreMyExits)Await.result(f, Duration.create(100, TimeUnit.MILLISECONDS));
     	getSender().tell(response, getSelf());
     }
 }

@@ -26,19 +26,24 @@ import scala.concurrent.Await;
 import akka.pattern.Patterns;
 import scala.concurrent.Future;
 
-import akkamud.reporting.ReportLogger;
-import akkamud.reporting.ReportingOneForOneStrategy;
-
 import static akkamud.EntityCommand.*;
+import static akkamud.ReportCommands.*;
 
 class MobileSupervisor extends UntypedActor
 {
-    private ReportLogger logger;
+    private ActorRef reportLogger;
+    private final SupervisorStrategy strategy;
     private ActorRef defaultRoom;
-    public MobileSupervisor()
+    
+    public MobileSupervisor(ActorRef newReportLogger)
     {
-        System.out.println(self().path().name() + ", running");
-        logger = ReportLogger.getLogger();
+    	System.out.println(self().path().name() + ", running");
+        reportLogger = newReportLogger;
+        System.out.println(self().path().name() + " created with logger: "+reportLogger.path().name());
+        strategy = new ReportingOneForOneStrategy(10,                           // max retries
+								                  Duration.create(1, "minute"), // within this time period
+								                  decider,                      // with this "decider" for handling
+								                  this.reportLogger);
     }
 
     private final Function<Throwable, Directive> decider = 
@@ -56,11 +61,6 @@ class MobileSupervisor extends UntypedActor
                 }
             }
         };
-
-    private final SupervisorStrategy strategy = 
-        new ReportingOneForOneStrategy(10,                           // max retries
-                                       Duration.create(1, "minute"), // within this time period
-                                       decider);                     // with this "decider" for handling
 
     @Override
     public SupervisorStrategy supervisorStrategy()
@@ -92,11 +92,14 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 2; i++)
+		    for(i = 0; i < 30; i++)
 		    {
-		    	ActorRef child = this.getContext().actorOf(Props.create(Human.class),
-		                "mobile" + Integer.toString(i));
-		        logger.logProgress(self().path().name(), child.path().name(), "child_starting");
+		    	Props p = Props.create(Human.class, this.reportLogger);
+		    	ActorRef child = this.getContext().actorOf(p, "mobile" + Integer.toString(i));
+		    	
+		    	ProgressReport report =
+	    			new ProgressReport(self().path().name(), child.path().name(), "child_starting");
+		    	this.reportLogger.tell(report, getSelf());
 		    }
 		    for(ActorRef child: JavaConversions.asJavaIterable(getContext().children()))
 		    {

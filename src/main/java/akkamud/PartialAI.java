@@ -59,9 +59,9 @@ class PartialAI extends UntypedActor
 	throws Exception
 	{
 		final Object exitsResponse;
-		final Future<Object> exitReq = Patterns.ask(getSender(), new WhatAreYourExits(), 10);
-		//exitsResponse = Await.result(exitReq, Duration.create(10, TimeUnit.MILLISECONDS));
-		exitsResponse = Await.result(exitReq, Duration.create("Inf"));
+		final Future<Object> exitReq = Patterns.ask(getSender(), new WhatAreYourExits(), 100);
+		exitsResponse = Await.result(exitReq, Duration.create(100, TimeUnit.MILLISECONDS));
+//		exitsResponse = Await.result(exitReq, Duration.create("Inf"));
 		if(! (exitsResponse instanceof TheseAreMyExits))
 		{
 			System.out.println(self().path().name()+": got an empty answer to WhatAreYourExits, doing nothing");
@@ -84,13 +84,13 @@ class PartialAI extends UntypedActor
 		
 		if(dest == null)
 		{
-			System.out.println(self().path().name()+": can't figure out where to go based on exits available, not moving");
+			System.out.println(self().path().toStringWithoutAddress()+": can't figure out where to go based on exits available, not moving");
 			return;
 		}
 //		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
-		final Future<Object> moveReq = Patterns.ask(getSender(), new JogToRoom(dest), 10);
+		final Future<Object> moveReq = Patterns.ask(getSender(), new JogToRoom(dest), 100);
 		final PassFail response;
-		response = (PassFail)Await.result(moveReq, Duration.create(40, TimeUnit.MILLISECONDS));
+		response = (PassFail)Await.result(moveReq, Duration.create(100, TimeUnit.MILLISECONDS));
 		//System.out.println(self().path().name()+": response status of request to move: "+response.status);
 	}
 	private void sendActionInstructions()
