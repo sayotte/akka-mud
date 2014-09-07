@@ -13,9 +13,9 @@ import static akka.actor.SupervisorStrategy.restart;
 import static akka.actor.SupervisorStrategy.stop;
 import static akka.actor.SupervisorStrategy.escalate;
 import akka.actor.SupervisorStrategy.Directive;
-import akka.actor.OneForOneStrategy;
+//import akka.actor.OneForOneStrategy;
 
-import java.sql.SQLException;
+//import java.sql.SQLException;
 
 //import java.io.StringWriter;
 
@@ -31,7 +31,7 @@ import static akkamud.ReportCommands.*;
 
 class MobileSupervisor extends UntypedActor
 {
-    private ActorRef reportLogger;
+    private final ActorRef reportLogger;
     private final SupervisorStrategy strategy;
     private ActorRef defaultRoom;
     
@@ -71,7 +71,7 @@ class MobileSupervisor extends UntypedActor
     public void onReceive(Object message)
     throws Exception
     {
-    	System.out.println(self().path().name()+".onReceive(): received message: "+message);
+//    	System.out.println(self().path().name()+".onReceive(): received message: "+message);
         if(message instanceof StartChildren)
             launchChildren();
         else if(message instanceof ReportChildren)
@@ -92,7 +92,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 30; i++)
+		    for(i = 0; i < 1; i++)
 		    {
 		    	Props p = Props.create(Human.class, this.reportLogger);
 		    	ActorRef child = this.getContext().actorOf(p, "mobile" + Integer.toString(i));
