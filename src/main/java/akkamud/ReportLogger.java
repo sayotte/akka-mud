@@ -45,9 +45,21 @@ class ReportLogger extends UntypedActor
     // Constructor and initialization routines
     public ReportLogger(String dbFilename) throws ClassNotFoundException, SQLException
     { 
-    	initDB(dbFilename);
-    	supervisor_statement = this.connection.prepareStatement(SUPERVISOR_INSERT);
-    	progress_statement = this.connection.prepareStatement(PROGRESS_INSERT);
+    	try
+    	{
+	    	initDB(dbFilename);
+	    	supervisor_statement = this.connection.prepareStatement(SUPERVISOR_INSERT);
+	    	progress_statement = this.connection.prepareStatement(PROGRESS_INSERT);
+    	}
+    	catch (Exception e)
+    	{
+    		StringWriter sw = new StringWriter();
+	        PrintWriter pw = new PrintWriter(sw);
+	        e.printStackTrace(pw);
+	        String st = sw.toString(); // stack trace as a string
+    		System.out.println(self().path().name()+": caught an exception, TERMINATING SYSTEM:\n"+st);
+    		getContext().system().shutdown();
+    	}
 	}
     private void initDB(String dbFilename) 
     throws ClassNotFoundException, SQLException
@@ -63,13 +75,24 @@ class ReportLogger extends UntypedActor
 
     // Akka reactive loop
     public void onReceive(Object message)
-    throws ClassNotFoundException, SQLException
     {
-    	if(message instanceof ProgressReport)
-    		logProgress((ProgressReport)message);
-    	if(message instanceof SupervisorReport)
-    		logSupervisor((SupervisorReport)message);
-    	unhandled(message);
+    	try
+    	{
+	    	if(message instanceof ProgressReport)
+	    		logProgress((ProgressReport)message);
+	    	if(message instanceof SupervisorReport)
+	    		logSupervisor((SupervisorReport)message);
+	    	unhandled(message);
+    	}
+    	catch(Exception e)
+    	{
+    		StringWriter sw = new StringWriter();
+	        PrintWriter pw = new PrintWriter(sw);
+	        e.printStackTrace(pw);
+	        String st = sw.toString(); // stack trace as a string
+    		System.out.println(self().path().name()+": caught an exception, TERMINATING SYSTEM:\n"+st);
+    		getContext().system().shutdown();
+    	}
     }
     
     // Implementation methods

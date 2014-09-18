@@ -3,7 +3,7 @@
 package akkamud;
 
 import java.util.concurrent.TimeoutException;
-import java.lang.InterruptedException;
+//import java.lang.InterruptedException;
 
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
@@ -99,6 +99,7 @@ public class AkkaMud
     		Props.create(TelnetListener.class, tcpManager, 4000, reportLogger);
         final ActorRef telnetListener =
     		system.actorOf(listenerProps, "telnet-listener");
+
 
 //        while(true)
 //        {

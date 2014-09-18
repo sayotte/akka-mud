@@ -6,8 +6,23 @@ package akkamud;
 import static akka.actor.SupervisorStrategy.escalate;
 import static akka.actor.SupervisorStrategy.restart;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+//import java.util.SortedMap;
+//import java.io.File;
+
+//import org.jdom2.Comment;
+//import org.jdom2.Content;
+//import org.jdom2.Content.CType;
+//import org.jdom2.Document;
+//import org.jdom2.Element;
+//import org.jdom2.JDOMException;
+//import org.jdom2.filter.Filters;
+//import org.jdom2.input.SAXBuilder;
+//import org.jdom2.util.IteratorIterable;
+//import org.apache.commons.collections4.trie.PatriciaTrie;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -22,11 +37,9 @@ import akka.io.Tcp.Command;
 import akka.io.Tcp.Connected;
 import akka.japi.Function;
 import akka.pattern.Patterns;
-
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.Future;
-
 import static akkamud.ReportCommands.*;
 
 /**
@@ -59,6 +72,7 @@ class TelnetListener extends UntypedActor
             
 	// constructor
 	public TelnetListener(ActorRef manager, int port, ActorRef newLogger)
+	throws Exception
 	{
 		this.tcpManager = manager;
 		this.listenPort = port;
@@ -89,18 +103,21 @@ class TelnetListener extends UntypedActor
 	    }
 	}
 	@Override
-	public void onReceive(Object message) throws Exception {
+	public void onReceive(Object message) throws Exception
+	{
 		if(message instanceof Connected)
 			handleNewConnection((Connected)message);
 		else
+		{
 			System.out.println(self().path().name()+": unhandled message: "+message);
 			unhandled(message);
+		}
 	}
 
 	// implementation methods
 	private void handleNewConnection(Connected msg)
 	{
-		Props p = Props.create(TelnetHandler.class);
+		Props p = Props.create(TelnetHandler.class, getSender());
 		ActorRef handler = getContext().actorOf(p, "telnet-handler"+this.connectionCounter);
 		ProgressReport report =
 			new ProgressReport(self().path().name(), handler.path().name(), "child_starting");
