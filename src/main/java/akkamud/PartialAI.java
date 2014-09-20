@@ -3,6 +3,9 @@ package akkamud;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.*;
+import akkamud.AkkaMud;
+
 import scala.concurrent.Await;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.Duration.Infinite;
@@ -22,10 +25,16 @@ class RequestActionInstructions implements Serializable {}
 class PartialAI extends UntypedActor
 {
 	private ObjectRingBuffer history;
+	private final Timer sendMovementTimer;
 	
 	public PartialAI()
 	{
 		this.history = new ObjectRingBuffer(20);
+		String metricName = self().path().toStringWithoutAddress();
+		metricName = metricName.replace('/', '.');
+		metricName = metricName.replaceFirst("\\.", "");
+		metricName += ".sendMovementInstructions.timer";
+		this.sendMovementTimer = AkkaMud.registry.timer(metricName);
 	}
 	public void onReceive(Object message)
 	throws Exception
@@ -58,10 +67,11 @@ class PartialAI extends UntypedActor
 	private void sendMovementInstructions()
 	throws Exception
 	{
+		Timer.Context context = sendMovementTimer.time();
 		final Object exitsResponse;
-		final Future<Object> exitReq = Patterns.ask(getSender(), new WhatAreYourExits(), 100);
-		exitsResponse = Await.result(exitReq, Duration.create(100, TimeUnit.MILLISECONDS));
-//		exitsResponse = Await.result(exitReq, Duration.create("Inf"));
+		final Future<Object> exitReq = Patterns.ask(getSender(), new WhatAreYourExits(), 5000);
+		exitsResponse = Await.result(exitReq, Duration.create(5000, TimeUnit.MILLISECONDS));
+		//exitsResponse = Await.result(exitReq, Duration.create("Inf"));
 		if(! (exitsResponse instanceof TheseAreMyExits))
 		{
 			System.out.println(self().path().name()+": got an empty answer to WhatAreYourExits, doing nothing");
@@ -88,10 +98,12 @@ class PartialAI extends UntypedActor
 			return;
 		}
 //		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
-		final Future<Object> moveReq = Patterns.ask(getSender(), new JogToRoom(dest), 100);
+		final Future<Object> moveReq = Patterns.ask(getSender(), new JogToRoom(dest), 5000);
 		final PassFail response;
-		response = (PassFail)Await.result(moveReq, Duration.create(100, TimeUnit.MILLISECONDS));
+		response = (PassFail)Await.result(moveReq, Duration.create(5000, TimeUnit.MILLISECONDS));
+		//response = (PassFail)Await.result(moveReq, Duration.create("Inf"));
 		//System.out.println(self().path().name()+": response status of request to move: "+response.status);
+		context.stop();
 	}
 	private void sendActionInstructions()
 	{

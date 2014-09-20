@@ -5,6 +5,8 @@ package akkamud;
 import java.util.concurrent.TimeoutException;
 //import java.lang.InterruptedException;
 
+import java.io.File;
+
 import akka.actor.ActorSystem;
 import akka.actor.ActorRef;
 import akka.actor.Props;
@@ -17,6 +19,9 @@ import scala.concurrent.Future;
 
 import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
+
+import com.codahale.metrics.*;
+import java.util.concurrent.TimeUnit;
 
 public class AkkaMud
 {
@@ -42,8 +47,8 @@ public class AkkaMud
 	{
 		System.out.println("AkkaMUD: loading rooms");
         long startTime = System.nanoTime();
-        Future<Object> f = Patterns.ask(roomSup,  new LoadRooms(), 1000);
-        Await.ready(f, Duration.create(5, "minutes"));
+        Future<Object> f = Patterns.ask(roomSup,  new LoadRooms(), 5000);
+        Await.ready(f, Duration.create(5, TimeUnit.MINUTES));
         long endTime = System.nanoTime();
         long durationMS = (endTime - startTime) / 1000000;
         System.out.println("AkkaMUD: completed room load in " + durationMS + "ms");
@@ -75,17 +80,31 @@ public class AkkaMud
         ActorRef mobileSup = 
     		system.actorOf(Props.create(MobileSupervisor.class, reportLogger), "mobile-supervisor");
     	mobileSup.tell(new SetDefaultRoom(defaultRoom), null);
-        Future<Object> f = Patterns.ask(mobileSup, new StartChildren(),  100);
-        Await.ready(f, Duration.create(5, "minutes"));
+        Future<Object> f = Patterns.ask(mobileSup, new StartChildren(),  5000);
+        Await.ready(f, Duration.create(5, TimeUnit.MINUTES));
         long endTime = System.nanoTime();
     	long durationMS = (endTime - startTime) / 1000000;
     	System.out.println("AkkaMUD: presuming mobiles started after " + durationMS + "ms");
     	
     	return mobileSup;
 	}
+
+	public static MetricRegistry registry;
 	public static void main(String[] args)
     throws Exception
     {
+		registry = new MetricRegistry();
+//		final ConsoleReporter reporter2 = ConsoleReporter.forRegistry(registry)
+//                .convertRatesTo(TimeUnit.SECONDS)
+//                .convertDurationsTo(TimeUnit.MILLISECONDS)
+//                .build();
+//		reporter2.start(5, TimeUnit.SECONDS);
+		final CsvReporter reporter = CsvReporter.forRegistry(registry)
+                .convertRatesTo(TimeUnit.SECONDS)
+                .convertDurationsTo(TimeUnit.MILLISECONDS)
+                .build(new File("metrics/"));
+		reporter.start(5, TimeUnit.SECONDS);
+		
         final ActorSystem system = ActorSystem.create("mud-actorsystem");
         final ActorRef reportLogger = startReportLogger(system);
     	final ActorRef roomSup = startRoomSup(system, reportLogger);
@@ -101,6 +120,14 @@ public class AkkaMud
     		system.actorOf(listenerProps, "telnet-listener");
 
 
+//        final Timer timer = registry.timer("timer");
+        while(true)
+        {
+//        	Timer.Context context = timer.time();
+        	Thread.sleep(500);
+//        	context.stop();
+        }
+        
 //        while(true)
 //        {
 //        	Thread.sleep(4000);

@@ -170,20 +170,20 @@ abstract class MobileEntity extends UntypedPersistentActor
 		// its initial no-op recovery
 		if(state.roomPath != null)
 		{
-			try
-			{
+//			try
+//			{
 				roomWeWereInBeforeRestart = Util.resolvePathToRefSync(state.roomPath, getContext().system());
 				if(! roomWeWereInBeforeRestart.equals(this.currentRoom))
 				{
 					System.out.println(self().path().name()+".MobileEntity.completeRecovery(): entering room: "+state.roomPath);
 					enterRoom(roomWeWereInBeforeRestart);
 				}
-			}
-			catch(ActorPathResolutionException e)
-			{
-				System.out.println(self().path().name() + ": failed to resolve room?: " + e);
-				enterPurgatory(); // may throw an exception
-			}
+//			}
+//			catch(ActorPathResolutionException e)
+//			{
+//				System.out.println(self().path().name() + ": failed to resolve room?: " + e);
+//				enterPurgatory(); // may throw an exception
+//			}
 		}
     }
     @Override
@@ -214,14 +214,15 @@ abstract class MobileEntity extends UntypedPersistentActor
 		persist(evt, setRoomProc);
 	}
 	private void enterRoom(ActorRef room)
+	throws Exception
     {
-    	try
-    	{
-    		final Future<Object> f = Patterns.ask(room, new AddRoomEntity(self()), 100);
-    		Await.ready(f, Duration.create(100, "millis"));
+//    	try
+//    	{
+    		final Future<Object> f = Patterns.ask(room, new AddRoomEntity(self()), 5000);
+    		Await.ready(f, Duration.create(5000, "millis"));
         	getContext().watch(room);
         	this.currentRoom = room;
-    	}
+//    	}
     	// FIXME XXX
     	// We should really just allow this exception to propagate-- throwing ourselves into
     	// Purgatory makes the situation essentially unrecoverable.
@@ -229,14 +230,14 @@ abstract class MobileEntity extends UntypedPersistentActor
     	// first sign of trouble... a few restarts later, we might succeed at whatever we were
     	// trying to do. If we end up dying an unrecoverable death, well, the MUD should
     	// probably go down with us.
-    	catch(Exception e)
-    	{
-    		System.out.println(self().path().name() + ": caught an exception trying to enter a room: " + e);
-    		System.out.println(self().path().name() + ": moving to Purgatory!");
-    		try{ enterPurgatory(); } // sets this.currentRoom
-    		// FIXME XXX
-    		catch(ActorPathResolutionException e2){ ; } 
-    	}
+//    	catch(Exception e)
+//    	{
+//    		System.out.println(self().path().name() + ": caught an exception trying to enter a room: " + e);
+//    		System.out.println(self().path().name() + ": moving to Purgatory!");
+//    		try{ enterPurgatory(); } // sets this.currentRoom
+//    		// FIXME XXX
+//    		catch(ActorPathResolutionException e2){ ; } 
+//    	}
     }
     private void enterPurgatory() throws ActorPathResolutionException
     {
@@ -259,6 +260,7 @@ abstract class MobileEntity extends UntypedPersistentActor
     	catch(Exception e){ ; }
     }
     protected void moveToRoom(MoveToRoom cmd)
+    throws Exception
     {
     	// Moving room-to-room is not atomic; we must have one foot in each
     	// room at some point. We model this by entering the new room before
@@ -305,8 +307,9 @@ abstract class MobileEntity extends UntypedPersistentActor
     		return;
     	}
     	TheseAreMyExits response;
-    	final Future<Object> f = Patterns.ask(currentRoom, cmd, 100);
-    	response = (TheseAreMyExits)Await.result(f, Duration.create(100, TimeUnit.MILLISECONDS));
+    	final Future<Object> f = Patterns.ask(currentRoom, cmd, 5000);
+    	response = (TheseAreMyExits)Await.result(f, Duration.create(5000, TimeUnit.MILLISECONDS));
+//    	response = (TheseAreMyExits)Await.result(f, Duration.create("Inf"));
     	getSender().tell(response, getSelf());
     }
 }

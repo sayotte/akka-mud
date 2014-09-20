@@ -92,7 +92,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 1; i++)
+		    for(i = 0; i < 300; i++)
 		    {
 		    	Props p = Props.create(Human.class, this.reportLogger);
 		    	ActorRef child = this.getContext().actorOf(p, "mobile" + Integer.toString(i));
@@ -103,8 +103,8 @@ class MobileSupervisor extends UntypedActor
 		    }
 		    for(ActorRef child: JavaConversions.asJavaIterable(getContext().children()))
 		    {
-		    	Future<Object> f = Patterns.ask(child, new MoveToRoom(defaultRoom), 100);
-		    	Await.ready(f, Duration.create(1000, "millis"));
+		    	Future<Object> f = Patterns.ask(child, new MoveToRoom(defaultRoom), 5000);
+		    	Await.ready(f, Duration.create(5000, "millis"));
 		    }
 		    getSender().tell(new Object(), self());
         }

@@ -151,11 +151,29 @@ class TelnetHandler extends UntypedActor
 	private void loginMenuLineHandler(ByteString line)
 	{
 		String lineStr = line.utf8String().trim();
-		String r = "The login menu handler isn't actually implemented, so I'm "+
-				   "transitioning us to the 'main menu' state, even though "+
-				   "we haven't actually logged in.\r\n";
-		sendOutput(r);
-		enterMainMenuState();
+		String r;
+		switch(lineStr)
+		{
+			case "0":
+				r = "Enter new username: ";
+				sendOutput(r);
+				lineHandler = this::newUsernameEntryLineHandler;
+				break;
+			case "1":
+				r = "Username: ";
+				sendOutput(r);
+				lineHandler = this::usernameEntryLineHandler;
+				break;
+			case "2":
+				r = "Enter email address: ";
+				sendOutput(r);
+				lineHandler = this::emailRecoveryLineHandler;
+				break;
+			default:
+				r = "Unrecognized input '"+lineStr+"'\r\n";
+				sendOutput(r);
+				sendLoginMenu();
+		}
 	}
 	private void sendBanner()
 	{
@@ -172,6 +190,46 @@ class TelnetHandler extends UntypedActor
 		    "[2] Recover lost username/password\r\n"+
 			"Enter selection: ";
 		sendOutput(menu, false);
+	}
+	private void newUsernameEntryLineHandler(ByteString line)
+	{
+		String lineStr = line.utf8String().trim();
+		String r = "You said '"+lineStr+"', did I get that right?\r\nY/N: ";
+		sendOutput(r);
+	}
+	private void newUsernameConfirmLineHandler(ByteString line)
+	{
+		
+	}
+	private void newPasswordEntryLineHandler(ByteString line)
+	{
+		
+	}
+	private void newPasswordReEntryLineHandler(ByteString line)
+	{
+		
+	}
+	private void usernameEntryLineHandler(ByteString line)
+	{
+		String lineStr = line.utf8String().trim();
+		String r = "Password: ";
+		sendOutput(r);
+		lineHandler = this::passwordEntryLineHandler;
+	}
+	private void passwordEntryLineHandler(ByteString line)
+	{
+		String lineStr = line.utf8String().trim();
+		String r = "Sounds good, whatever. Let's go to the main menu!\r\n";
+		sendOutput(r);
+		enterMainMenuState();
+	}
+	private void emailRecoveryLineHandler(ByteString line)
+	{
+		
+	}
+	private void accountRecoveryLineHandler(ByteString line)
+	{
+		
 	}
 	
 	// Main-menu state implementation

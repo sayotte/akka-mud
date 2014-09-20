@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.lang.Exception;
 
+import com.codahale.metrics.*;
+
 import scala.collection.JavaConversions;
 import scala.collection.mutable.Buffer;
 import scala.concurrent.duration.Duration;
@@ -70,10 +72,24 @@ class Room extends UntypedActor
 {
     private RoomState state = new RoomState();
     private Router router = new Router(new BroadcastRoutingLogic());
+    private final Timer reportExitsTimer;
+    private final Timer onReceiveTimer;
+    
+    public Room()
+    {
+    	String metricName = self().path().toStringWithoutAddress()
+    						.replace('/',  '.')
+    						.replaceFirst("\\.", "");
+    	String reportExitsName = metricName + ".reportExits.timer";
+    	this.reportExitsTimer = AkkaMud.registry.timer(reportExitsName);
+    	String onReceiverName = metricName + ".onReceive.timer";
+    	this.onReceiveTimer = AkkaMud.registry.timer(onReceiverName);
+    }
     
     public void onReceive(Object command)
     throws Exception
     {
+    	Timer.Context context = onReceiveTimer.time();
 //    	System.out.println(self().path().name()+": received command: "+command);
         if(command instanceof AddRoomEntity)
             addEntity(((AddRoomEntity)command).entity);
@@ -98,6 +114,8 @@ class Room extends UntypedActor
         	reportExits();
         else
             unhandled(command);
+        
+        context.stop();
     }
     
     private void addEntity(ActorRef who)
@@ -155,6 +173,7 @@ class Room extends UntypedActor
     }
     private void reportExits()
     {
+    	Timer.Context context = reportExitsTimer.time();
     	TheseAreMyExits response = new TheseAreMyExits();
 		response.exitRefs.put(Directions.NORTH, state.northExit);
 		response.exitRefs.put(Directions.EAST,  state.eastExit);
@@ -165,6 +184,7 @@ class Room extends UntypedActor
 		response.exitPaths.put(Directions.SOUTH, state.southExitPath);
 		response.exitPaths.put(Directions.WEST,  state.westExitPath);
     	getSender().tell(response, getSelf());
+    	context.stop();
     }
 
 }

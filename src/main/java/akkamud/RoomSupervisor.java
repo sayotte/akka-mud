@@ -8,6 +8,7 @@ import static akka.actor.SupervisorStrategy.restart;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,7 +27,6 @@ import akka.actor.UntypedActor;
 import akka.actor.SupervisorStrategy.Directive;
 import akka.japi.Function;
 import akka.pattern.Patterns;
-
 import static akkamud.EntityCommand.*;
 import static akkamud.ReportCommands.*;
 /**
@@ -109,8 +109,8 @@ class RoomSupervisor extends UntypedActor {
 	    		if(exitId != 0)
 	    			state.westExitPath = basePath + rs.getInt("westexit");
 	    		
-	    		Future<Object> f = Patterns.ask(room,  state, 10);
-	    		Await.ready(f,  Duration.create(10, "millis"));
+	    		Future<Object> f = Patterns.ask(room,  state, 5000);
+	    		Await.ready(f,  Duration.create(5000, TimeUnit.MILLISECONDS));
 	    		endTime = System.nanoTime();
 	    		durationMS = (endTime - startTime) / 1000000;
 	    		System.out.println(self().path().name() + ": loaded room instance for " +room.path().name()+ " in " +durationMS+ "ms");
@@ -123,8 +123,8 @@ class RoomSupervisor extends UntypedActor {
 	    	for(ActorRef room: JavaConversions.asJavaIterable(getContext().children()))
 	    	{
     			startTime = System.nanoTime();
-	    		Future<Object> f = Patterns.ask(room, new ResolveExitPaths(), 100);
-	    		Await.ready(f, Duration.create(100, "millis"));
+	    		Future<Object> f = Patterns.ask(room, new ResolveExitPaths(), 5000);
+	    		Await.ready(f, Duration.create(5000, TimeUnit.MILLISECONDS));
 	    		endTime = System.nanoTime();
 	    		durationMS = (endTime - startTime) / 1000000;
 	    		System.out.println(self().path().name() + ": completed ResolveExitPaths for " + room.path().name() + " in " +durationMS+ "ms");
