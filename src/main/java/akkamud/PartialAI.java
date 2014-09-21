@@ -75,6 +75,7 @@ class PartialAI extends UntypedActor
 		if(! (exitsResponse instanceof TheseAreMyExits))
 		{
 			System.out.println(self().path().name()+": got an empty answer to WhatAreYourExits, doing nothing");
+			System.out.println(self().path().name()+": class of actual answer: " + exitsResponse.getClass().getName());
 			return;
 		}
 		final TheseAreMyExits exits = (TheseAreMyExits)exitsResponse;
@@ -105,7 +106,7 @@ class PartialAI extends UntypedActor
 		//System.out.println(self().path().name()+": response status of request to move: "+response.status);
 		context.stop();
 	}
-	private void sendActionInstructions()
+ 	private void sendActionInstructions()
 	{
 		return;
 	}

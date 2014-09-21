@@ -286,8 +286,8 @@ abstract class MobileEntity extends UntypedPersistentActor
     }
     private void handleRoomEntry(ActorRef who)
     {
-    	if(! who.equals(self()))
-    		System.out.println(self().path().name()+": I see "+who.path().name()+" entering the room.");
+//    	if(! who.equals(self()))
+//    		System.out.println(self().path().name()+": I see "+who.path().name()+" entering the room.");
     }
     private void handleRoomExit(ActorRef who)
     {

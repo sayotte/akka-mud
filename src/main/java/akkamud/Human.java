@@ -154,7 +154,7 @@ final class Human extends Creature
 			getSender().tell(new PassFail(false), getSelf());
 			return;
 		}
-		System.out.println(self().path().name()+": "+movementDesc+"ing to another room");
+//		System.out.println(self().path().name()+": "+movementDesc+"ing to another room");
 		setCreatureVital(CreatureVitalSelector.STAMINA, state.stamina - staminaTax);
 		
 		ActorRef room = ((AmbulateToRoom)cmd).room;
