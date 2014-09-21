@@ -18,6 +18,7 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.Future;
 
 import static akkamud.EntityCommand.*;
+import static akkamud.MobileSupervisorCommands.*;
 import static akkamud.Util.*;
 
 import com.codahale.metrics.*;
@@ -89,6 +90,7 @@ public class AkkaMud
     	return mobileSup;
 	}
 
+	public static ActorRef mobileSup;
 	public static MetricRegistry registry;
 	public static void main(String[] args)
     throws Exception
@@ -110,7 +112,7 @@ public class AkkaMud
     	final ActorRef roomSup = startRoomSup(system, reportLogger);
     	loadRooms(system, roomSup);        
     	final ActorRef defaultRoom = getDefaultRoom(system);
-        final ActorRef mobileSup = startMobileSup(system, reportLogger, defaultRoom);
+        mobileSup = startMobileSup(system, reportLogger, defaultRoom);
         
         // stuff related to TCP
         final ActorRef tcpManager = Tcp.get(system).manager();

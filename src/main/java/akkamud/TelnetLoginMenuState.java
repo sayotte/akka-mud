@@ -13,6 +13,7 @@ import akka.util.ByteString;
 final class TelnetLoginMenuState extends TelnetHandlerState
 {
 	private InputLineHandler lineHandler;
+	private String accountName; 
 	@Override
 	protected InputLineHandler getLineHandler()
 	{ return lineHandler; }
@@ -22,10 +23,9 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 	 * @param newHandlerRef
 	 * @param newAIRef
 	 */
-	public TelnetLoginMenuState(ActorRef newConnRef, ActorRef newHandlerRef,
-			ActorRef newAIRef)
+	public TelnetLoginMenuState(ActorRef newConnRef, ActorRef newHandlerRef)
 	{
-		super(newConnRef, newHandlerRef, newAIRef);
+		super(newConnRef, newHandlerRef);
 		lineHandler = this::loginMenuLineHandler;
 		sendBanner();
 		sendLoginMenu();
@@ -97,7 +97,8 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 	}
 	private TelnetHandlerState usernameEntryLineHandler(ByteString line)
 	{
-		//String lineStr = line.utf8String().trim();
+		String lineStr = line.utf8String().trim();
+		accountName = lineStr;
 		String r = "Password: ";
 		sendOutput(r);
 		lineHandler = this::passwordEntryLineHandler;
@@ -106,11 +107,12 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 	private TelnetHandlerState passwordEntryLineHandler(ByteString line)
 	{
 		//String lineStr = line.utf8String().trim();
+		System.out.println(getHandlerRef().path().name()+": logged in as '"+accountName+"'");
 		String r = "Sounds good, whatever. Let's go to the main menu!\r\n";
 		sendOutput(r);
 		return new TelnetMainMenuState(getConnectionRef(),
 									   getHandlerRef(),
-									   getAIRef());
+									   accountName);
 	}
 	private TelnetHandlerState emailRecoveryLineHandler(ByteString line)
 	{

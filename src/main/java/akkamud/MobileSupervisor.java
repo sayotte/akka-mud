@@ -2,6 +2,8 @@
 
 package akkamud;
 
+import java.util.concurrent.TimeUnit;
+
 import akka.actor.ActorRef;
 import akka.actor.UntypedActor;
 import akka.actor.Props;
@@ -25,8 +27,8 @@ import scala.concurrent.duration.Duration;
 import scala.concurrent.Await;
 import akka.pattern.Patterns;
 import scala.concurrent.Future;
-
 import static akkamud.EntityCommand.*;
+import static akkamud.MobileSupervisorCommands.*;
 import static akkamud.ReportCommands.*;
 
 class MobileSupervisor extends UntypedActor
@@ -78,6 +80,8 @@ class MobileSupervisor extends UntypedActor
             announceChildren();
         else if(message instanceof RestartChildren)
             restartChildren();
+        else if(message instanceof ListChildren)
+        	listChildren();
         else if(message instanceof MoveAllChildrenToRoom)
         	moveAllChildrenToRoom((MoveAllChildrenToRoom)message);
         else if(message instanceof SetDefaultRoom)
@@ -104,8 +108,9 @@ class MobileSupervisor extends UntypedActor
 		    for(ActorRef child: JavaConversions.asJavaIterable(getContext().children()))
 		    {
 		    	Future<Object> f = Patterns.ask(child, new MoveToRoom(defaultRoom), 5000);
-		    	Await.ready(f, Duration.create(5000, "millis"));
+		    	Await.ready(f, Duration.create(5000, TimeUnit.MILLISECONDS));
 		    }
+
 		    getSender().tell(new Object(), self());
         }
         catch(Exception e)
@@ -123,6 +128,10 @@ class MobileSupervisor extends UntypedActor
         {
             child.tell(new AnnounceYourself(), this.self());
         }
+    }
+    private void listChildren()
+    {
+    	getSender().tell(JavaConversions.asJavaIterable(getContext().children()), getSelf());
     }
     private void restartChildren()
     {

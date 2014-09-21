@@ -18,26 +18,24 @@ abstract class TelnetHandlerState
 {
 	protected interface InputLineHandler
 	{
-		TelnetHandlerState invoke(ByteString line);
+		TelnetHandlerState invoke(ByteString line) throws Exception;
 	}
 	
 	private ActorRef connectionRef;
 	private ActorRef handlerRef;
-	private ActorRef AIRef;
 	
 	protected ActorRef getConnectionRef(){ return this.connectionRef; }
 	protected ActorRef getHandlerRef(){ return this.handlerRef; }
-	protected ActorRef getAIRef(){ return this.AIRef; }
 	abstract protected InputLineHandler getLineHandler();
 	
-	public TelnetHandlerState(ActorRef newConnRef, ActorRef newHandlerRef, ActorRef newAIRef)
+	public TelnetHandlerState(ActorRef newConnRef, ActorRef newHandlerRef)
 	{
 		this.connectionRef = newConnRef;
 		this.handlerRef = newHandlerRef;
-		this.AIRef = newAIRef;
 	}
 	
 	public TelnetHandlerState handleLine(ByteString line)
+	throws Exception
 	{
 		return getLineHandler().invoke(line);
 	}

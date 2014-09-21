@@ -19,6 +19,8 @@ import akka.util.ByteString;
  */
 final class TelnetBoundToEntityState extends TelnetHandlerState
 {
+	private String accountName;
+	private ActorRef AIRef;
 	private PatriciaTrie<String> lookupTrie;
 	private Pattern inputRE;
     private final String[] recognizedCommands =
@@ -55,9 +57,12 @@ final class TelnetBoundToEntityState extends TelnetHandlerState
     // Constructor and init methods
 	public TelnetBoundToEntityState(ActorRef newConnRef,
 								    ActorRef newHandlerRef,
+								    String authenticatedAccount,
 								    ActorRef newAIRef)
 	{
-		super(newConnRef, newHandlerRef, newAIRef);
+		super(newConnRef, newHandlerRef);
+		accountName = authenticatedAccount;
+		AIRef = newAIRef;
 		lookupTrie = buildCommandTrie();
 		inputRE = Pattern.compile("\\w+");
 		lineHandler = this::boundToEntityLineHandler;

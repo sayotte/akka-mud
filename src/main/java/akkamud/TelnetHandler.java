@@ -39,7 +39,7 @@ class TelnetHandler extends UntypedActor
 		
 		bufferedInput = new ByteStringBuilder().result();
 		
-	    stateHandler = new TelnetLoginMenuState(connectionRef, getSelf(), null);
+	    stateHandler = new TelnetLoginMenuState(connectionRef, getSelf());
 	}
 
 	// Main Akka receive-loop implementation
@@ -56,11 +56,13 @@ class TelnetHandler extends UntypedActor
 
 	// Helper methods
 	private void handleReceived(ByteString input)
+	throws Exception
 	{
 		bufferedInput = bufferedInput.$plus$plus(input); // str += input
 		while(handleBufferedInput() == true){ ; }
 	}
 	private boolean handleBufferedInput()
+	throws Exception
 	{
 		int lineEnd = bufferedInput.indexOf('\n');
 		if(lineEnd == -1)
