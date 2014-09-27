@@ -137,6 +137,8 @@ abstract class Creature extends MobileEntity
         	acceptNewAI((NewAI)command);
         else if(command instanceof Terminated)
         	handleTerminated();
+        else if(command instanceof Announce)
+        	handleAnnounce(command);
         else
             super.handleCommand(command);
     }
@@ -171,6 +173,10 @@ abstract class Creature extends MobileEntity
     		return;
     	System.out.println(self().path().name()+": my AI seems to have died, I'm going to launch a new one");
     	this.AI = getContext().actorOf(Props.create(DumbAI.class), "AI");
+    }
+    private void handleAnnounce(Object cmd)
+    {
+    	AI.tell(cmd, getSelf());
     }
     
     protected void handleTick() throws Exception

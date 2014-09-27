@@ -4,20 +4,27 @@ import java.io.Serializable;
 
 import akka.actor.ActorRef;
 
-class Announce implements Serializable
+abstract class Announce implements Serializable
 {
-	public Object payload;
-    public Announce(Object obj){ payload = obj; }    
+	static final long serialVersionUID = 1;
 }
 
-class Entry implements Serializable
+class Entry extends Announce
 {
 	public ActorRef who;
-	public Entry(ActorRef actor){ who = actor; }
+	public Entry(ActorRef actor)
+	{
+		super();
+		who = actor;
+	}
 }
 
-class Exit implements Serializable
+class Exit extends Announce
 {
 	public ActorRef who;
-	public Exit(ActorRef actor){ who = actor; }
+	public Exit(ActorRef actor)
+	{
+		super();
+		who = actor;
+	}
 }

@@ -96,7 +96,7 @@ class MobileSupervisor extends UntypedActor
         int i;
         try
         {
-		    for(i = 0; i < 1; i++)
+		    for(i = 0; i < 2; i++)
 		    {
 		    	Props p = Props.create(Human.class, this.reportLogger);
 		    	ActorRef child = this.getContext().actorOf(p, "mobile" + Integer.toString(i));

@@ -52,6 +52,11 @@ class TelnetHandler extends UntypedActor
 	    	System.out.println(self().path().name()+": connection closed, shutting down");
 	        getContext().stop(getSelf());
 	    }
+	    else
+	    {
+	    	if(stateHandler.handleMessage(message, getSender()) == false)
+	    		unhandled(message);
+	    }
 	}
 
 	// Helper methods

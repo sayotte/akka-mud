@@ -30,6 +30,8 @@ abstract class TelnetHandlerState
 	protected ActorRef getHandlerRef(){ return this.handlerRef; }
 	protected ActorContext getContext(){ return this.context; }
 	abstract protected InputLineHandler getLineHandler();
+
+	abstract public boolean handleMessage(Object msg, ActorRef from);
 	
 	public TelnetHandlerState(ActorRef newConnRef, ActorRef newHandlerRef, ActorContext ctx)
 	{

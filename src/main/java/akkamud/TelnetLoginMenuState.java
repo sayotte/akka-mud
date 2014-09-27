@@ -125,4 +125,8 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 		return this;
 	}
 
+	public boolean handleMessage(Object message, ActorRef from)
+	{
+		return false;
+	}
 }

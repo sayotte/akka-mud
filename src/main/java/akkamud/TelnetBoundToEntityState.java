@@ -21,7 +21,7 @@ import akka.util.ByteString;
 final class TelnetBoundToEntityState extends TelnetHandlerState
 {
 	private String accountName;
-	private ActorRef AIRef;
+	private ActorRef entityRef;
 	private PatriciaTrie<String> lookupTrie;
 	private Pattern inputRE;
     private final String[] recognizedCommands =
@@ -60,11 +60,11 @@ final class TelnetBoundToEntityState extends TelnetHandlerState
 								    ActorRef newHandlerRef,
 								    ActorContext ctx,
 								    String authenticatedAccount,
-								    ActorRef newAIRef)
+								    ActorRef newEntityRef)
 	{
 		super(newConnRef, newHandlerRef, ctx);
 		accountName = authenticatedAccount;
-		AIRef = newAIRef;
+		entityRef = newEntityRef;
 		lookupTrie = buildCommandTrie();
 		inputRE = Pattern.compile("\\w+");
 		lineHandler = this::boundToEntityLineHandler;
@@ -179,4 +179,24 @@ final class TelnetBoundToEntityState extends TelnetHandlerState
 		return;
 	}
 
+	public boolean handleMessage(Object msg, ActorRef from)
+	{
+		if(msg instanceof Announce)
+			return handleAnnounce((Announce)msg, from);
+		// there might be other messages here, e.g. freeze, logout, chat
+		else
+			return false;
+	}
+	private boolean handleAnnounce(Announce msg, ActorRef from)
+	{
+		String r;
+		if(msg instanceof Entry)
+			r = ((Entry)msg).who.path().name()+" enters the room.\r\n";
+		else if(msg instanceof Exit)
+			r = ((Exit)msg).who.path().name()+" leaves the room.\r\n";
+		else
+			return false;
+		sendOutput(r);
+		return true;
+	}
 }

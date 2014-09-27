@@ -48,8 +48,8 @@ class DumbAI extends UntypedActor
 				sendMovementInstructions();
 			else if(message instanceof RequestActionInstructions)
 				sendActionInstructions();
-			else if(message instanceof NewAI)
-				acceptNewAI((NewAI)message);
+			else if(message instanceof Announce)
+				handleAnnounce(message);
 			else
 				unhandled(message);
 		}
@@ -113,8 +113,21 @@ class DumbAI extends UntypedActor
 	{
 		return;
 	}
- 	private void acceptNewAI(NewAI msg)
+ 	private void handleAnnounce(Object msg)
  	{
- 		
+ 		if(msg instanceof Entry)
+ 		{
+ 			ActorRef who = ((Entry)msg).who;
+ 			System.out.println(self().path().toStringWithoutAddress()+
+ 							   ": I see "+who.path().name()+" entering the room!");
+ 		}
+ 		else if(msg instanceof Exit)
+ 		{
+ 			ActorRef who = ((Entry)msg).who;
+ 			System.out.println(self().path().toStringWithoutAddress()+
+ 							   ": I see "+who.path().name()+" exiting the room!");
+ 		}
+ 			
  	}
+
 }

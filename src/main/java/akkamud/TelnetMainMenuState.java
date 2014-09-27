@@ -147,4 +147,8 @@ final class TelnetMainMenuState extends TelnetHandlerState
 		sendMainMenu();
 	}
 
+	public boolean handleMessage(Object message, ActorRef from)
+	{
+		return false;
+	}
 }
