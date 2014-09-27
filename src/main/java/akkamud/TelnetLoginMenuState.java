@@ -4,6 +4,7 @@
 package akkamud;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorContext;
 import akka.util.ByteString;
 
 /**
@@ -23,9 +24,9 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 	 * @param newHandlerRef
 	 * @param newAIRef
 	 */
-	public TelnetLoginMenuState(ActorRef newConnRef, ActorRef newHandlerRef)
+	public TelnetLoginMenuState(ActorRef newConnRef, ActorRef newHandlerRef, ActorContext ctx)
 	{
-		super(newConnRef, newHandlerRef);
+		super(newConnRef, newHandlerRef, ctx);
 		lineHandler = this::loginMenuLineHandler;
 		sendBanner();
 		sendLoginMenu();
@@ -112,6 +113,7 @@ final class TelnetLoginMenuState extends TelnetHandlerState
 		sendOutput(r);
 		return new TelnetMainMenuState(getConnectionRef(),
 									   getHandlerRef(),
+									   getContext(),
 									   accountName);
 	}
 	private TelnetHandlerState emailRecoveryLineHandler(ByteString line)

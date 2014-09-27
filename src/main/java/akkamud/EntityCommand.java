@@ -35,6 +35,12 @@ class EntityCommand
 //    	public ActorRef who;
 //    	public AnnounceRoomExit(ActorRef newWho){ who = newWho; }
 //    }
+    
+    public static final class NewAI implements Serializable
+    {
+    	public ActorRef AI;
+    	public NewAI(ActorRef newAI){ AI = newAI; }
+    }
 
     public static final class LoadRooms implements Serializable {}
     public static final class LoadRoomsComplete implements Serializable {}

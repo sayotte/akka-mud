@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.collections4.trie.PatriciaTrie;
 
+import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.util.ByteString;
 
@@ -57,10 +58,11 @@ final class TelnetBoundToEntityState extends TelnetHandlerState
     // Constructor and init methods
 	public TelnetBoundToEntityState(ActorRef newConnRef,
 								    ActorRef newHandlerRef,
+								    ActorContext ctx,
 								    String authenticatedAccount,
 								    ActorRef newAIRef)
 	{
-		super(newConnRef, newHandlerRef);
+		super(newConnRef, newHandlerRef, ctx);
 		accountName = authenticatedAccount;
 		AIRef = newAIRef;
 		lookupTrie = buildCommandTrie();

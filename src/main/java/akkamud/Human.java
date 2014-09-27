@@ -76,7 +76,6 @@ final class Human extends Creature
 		super(reportLogger);
 		//System.out.println(self().path().name()+".Human(): constructor called with logger: "+reportLogger.path().name());
 		this.state = new HumanState();
-		this.partialAI = getContext().actorOf(Props.create(PartialAI.class), "partialAI");
 		this.movingUntilMS = 0;
 		this.busyUntilMS = 0;
 	}
@@ -103,9 +102,9 @@ final class Human extends Creature
 		long nowMS = System.nanoTime() / 1000000;
 		//System.out.println(self().path().name()+".Human.handleTick(): @ "+nowMS+"ms");
 		if(nowMS >= movingUntilMS)
-			partialAI.tell(new RequestMovementInstructions(), getSelf());
+			AI.tell(new RequestMovementInstructions(), getSelf());
 		if(nowMS >= busyUntilMS)
-			partialAI.tell(new RequestActionInstructions(), getSelf());
+			AI.tell(new RequestActionInstructions(), getSelf());
 		super.handleTick();
 	}
 	protected List<BleedingWound> getWounds()

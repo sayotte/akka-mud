@@ -6,6 +6,7 @@ package akkamud;
 import org.apache.commons.lang3.text.WordUtils;
 
 import akka.actor.ActorRef;
+import akka.actor.ActorContext;
 import akka.io.TcpMessage;
 import akka.util.ByteString;
 import akka.util.ByteStringBuilder;
@@ -23,15 +24,18 @@ abstract class TelnetHandlerState
 	
 	private ActorRef connectionRef;
 	private ActorRef handlerRef;
+	private ActorContext context;
 	
 	protected ActorRef getConnectionRef(){ return this.connectionRef; }
 	protected ActorRef getHandlerRef(){ return this.handlerRef; }
+	protected ActorContext getContext(){ return this.context; }
 	abstract protected InputLineHandler getLineHandler();
 	
-	public TelnetHandlerState(ActorRef newConnRef, ActorRef newHandlerRef)
+	public TelnetHandlerState(ActorRef newConnRef, ActorRef newHandlerRef, ActorContext ctx)
 	{
 		this.connectionRef = newConnRef;
 		this.handlerRef = newHandlerRef;
+		this.context = ctx;
 	}
 	
 	public TelnetHandlerState handleLine(ByteString line)

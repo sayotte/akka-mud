@@ -4,7 +4,9 @@ import static akka.actor.SupervisorStrategy.escalate;
 import static akka.actor.SupervisorStrategy.restart;
 import scala.concurrent.duration.Duration;
 import akka.actor.ActorRef;
+import akka.actor.Props;
 import akka.actor.SupervisorStrategy.Directive;
+import akka.actor.Terminated;
 import akka.japi.Function;
 import akka.japi.Procedure;
 
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 
 import java.lang.reflect.Field;
 
+import static akkamud.EntityCommand.*;
 import static akkamud.Util.*;
 
 /**
@@ -115,21 +118,25 @@ class CreatureState extends MobileEntityState
 
 abstract class Creature extends MobileEntity
 {
-    protected ActorRef partialAI;
+    protected ActorRef AI;
     protected long lastTickTime = System.nanoTime();
 
     public Creature(ActorRef reportLogger)
     {
     	super(reportLogger);
+    	this.AI = getContext().actorOf(Props.create(DumbAI.class), "AI");
     	//System.out.println(self().path().name()+".Creature(): constructor called with logger: "+reportLogger.path().name());
     }
     
     protected void handleCommand(Object command) throws Exception
     {
-    	long nowMS = System.nanoTime() / 1000000;
 		//System.out.println(self().path().name()+".Creature: received message @ "+nowMS+"ms: "+command);
         if(command.equals("tick"))
         	handleTick();
+        else if(command instanceof NewAI)
+        	acceptNewAI((NewAI)command);
+        else if(command instanceof Terminated)
+        	handleTerminated();
         else
             super.handleCommand(command);
     }
@@ -147,6 +154,23 @@ abstract class Creature extends MobileEntity
         	}
         else
             super.onReceiveRecover(msg);
+    }
+    
+    private void acceptNewAI(NewAI cmd)
+    {
+    	// XXX FIXME this should probably be a Patterns.gracefulStop()
+    	getContext().stop(AI);
+    	AI = cmd.AI;
+    	System.out.println(self().path().name()+": I am being possessed by "+AI.path().name()+"!");
+    	getContext().watch(AI);
+    	getSender().tell(new CommonCommands.PassFail(true), getSelf());
+    }
+    private void handleTerminated()
+    {
+    	if(! getSender().equals(AI))
+    		return;
+    	System.out.println(self().path().name()+": my AI seems to have died, I'm going to launch a new one");
+    	this.AI = getContext().actorOf(Props.create(DumbAI.class), "AI");
     }
     
     protected void handleTick() throws Exception

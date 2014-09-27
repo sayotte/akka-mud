@@ -22,12 +22,13 @@ import static akkamud.CommonCommands.*;
 class RequestMovementInstructions implements Serializable {}
 class RequestActionInstructions implements Serializable {}
 
-class PartialAI extends UntypedActor
+class DumbAI extends UntypedActor
 {
 	private ObjectRingBuffer history;
 	private final Timer sendMovementTimer;
+	private ActorRef AI;
 	
-	public PartialAI()
+	public DumbAI()
 	{
 		this.history = new ObjectRingBuffer(20);
 		String metricName = self().path().toStringWithoutAddress();
@@ -42,12 +43,13 @@ class PartialAI extends UntypedActor
 		this.history.add(message);
 		try
 		{
-			long nowMS = System.nanoTime() / 1000000;
 			//System.out.println(self().path().name()+".PartialAI: received message @ "+nowMS+"ms: "+message);
 			if(message instanceof RequestMovementInstructions)
 				sendMovementInstructions();
 			else if(message instanceof RequestActionInstructions)
 				sendActionInstructions();
+			else if(message instanceof NewAI)
+				acceptNewAI((NewAI)message);
 			else
 				unhandled(message);
 		}
@@ -95,7 +97,8 @@ class PartialAI extends UntypedActor
 		
 		if(dest == null)
 		{
-			System.out.println(self().path().toStringWithoutAddress()+": can't figure out where to go based on exits available, not moving");
+			System.out.println(self().path().toStringWithoutAddress()+
+							   ": can't figure out where to go based on exits available, not moving");
 			return;
 		}
 //		final Future<Object> moveReq = Patterns.ask(getSender(), new WalkToRoom(dest), 10);
@@ -110,4 +113,8 @@ class PartialAI extends UntypedActor
 	{
 		return;
 	}
+ 	private void acceptNewAI(NewAI msg)
+ 	{
+ 		
+ 	}
 }
