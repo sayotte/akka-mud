@@ -123,7 +123,7 @@ class DumbAI extends UntypedActor
  		}
  		else if(msg instanceof Exit)
  		{
- 			ActorRef who = ((Entry)msg).who;
+ 			ActorRef who = ((Exit)msg).who;
  			System.out.println(self().path().toStringWithoutAddress()+
  							   ": I see "+who.path().name()+" exiting the room!");
  		}
